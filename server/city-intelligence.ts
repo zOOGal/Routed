@@ -53,31 +53,31 @@ export const cityProfiles: Record<string, CityProfile> = {
     transitTypes: ["JR Lines", "Metro", "Toei Subway", "Private Railways", "Bus"],
     rideshareApps: ["Uber", "JapanTaxi", "GO"]
   },
-  london: {
-    id: "london",
-    name: "London",
-    country: "UK",
-    timezone: "Europe/London",
+  berlin: {
+    id: "berlin",
+    name: "Berlin",
+    country: "Germany",
+    timezone: "Europe/Berlin",
     complexStations: [
-      "King's Cross St Pancras",
-      "Victoria",
-      "Bank/Monument",
-      "Liverpool Street",
-      "Oxford Circus",
-      "Waterloo"
+      "Hauptbahnhof",
+      "Alexanderplatz",
+      "Friedrichstraße",
+      "Zoologischer Garten",
+      "Potsdamer Platz",
+      "Ostkreuz"
     ],
-    nightReliability: 0.5,
-    transitVsTaxiBias: 0.7,
-    walkingFriendliness: 0.75,
+    nightReliability: 0.8,
+    transitVsTaxiBias: 0.75,
+    walkingFriendliness: 0.85,
     cognitiveLoadIndex: {
-      navigation: 0.5,
+      navigation: 0.4,
       signage: 0.3,
-      crowding: 0.6,
-      overall: 0.45
+      crowding: 0.4,
+      overall: 0.35
     },
-    currency: "GBP",
-    transitTypes: ["Underground", "Overground", "DLR", "Elizabeth Line", "Bus", "National Rail"],
-    rideshareApps: ["Uber", "Bolt", "FreeNow"]
+    currency: "EUR",
+    transitTypes: ["U-Bahn", "S-Bahn", "Tram", "Bus", "Regional Rail"],
+    rideshareApps: ["Uber", "Bolt", "FreeNow", "SIXT"]
   }
 };
 

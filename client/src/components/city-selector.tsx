@@ -10,7 +10,7 @@ import {
 const CITIES = [
   { id: "nyc", name: "New York City", country: "USA", flag: "US" },
   { id: "tokyo", name: "Tokyo", country: "Japan", flag: "JP" },
-  { id: "london", name: "London", country: "UK", flag: "GB" },
+  { id: "berlin", name: "Berlin", country: "Germany", flag: "DE" },
 ];
 
 interface CitySelectorProps {

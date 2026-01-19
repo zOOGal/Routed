@@ -80,7 +80,7 @@ Each city has a profile including:
 - Walking friendliness
 - Cognitive Load Index (navigation, signage, crowding)
 
-Currently supported: NYC, Tokyo, London
+Currently supported: NYC, Tokyo, Berlin
 
 ## User Preferences
 
