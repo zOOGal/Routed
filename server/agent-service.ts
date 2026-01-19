@@ -5,7 +5,8 @@ import type {
   AgentRequest, 
   RouteRecommendation, 
   RouteStep,
-  CityProfile 
+  CityProfile,
+  TravelMood
 } from "@shared/schema";
 
 const ai = new GoogleGenAI({
@@ -21,8 +22,9 @@ const SYSTEM_PROMPT = `You are Movi, a calm and confident AI mobility agent. You
 Core Principles:
 1. OPINIONATED: Always recommend ONE best option, not multiple choices
 2. STRESS-FIRST: Prioritize reducing mental load over saving time
-3. CONTEXT-AWARE: Consider the city, time of day, and user preferences
-4. EXPLAINABLE: Always explain your reasoning in a friendly, conversational way
+3. MOOD-AWARE: Adapt recommendations based on user's current emotional state
+4. CONTEXT-AWARE: Consider weather, traffic, time of day, and real-world conditions
+5. EXPLAINABLE: Always explain your reasoning in a friendly, conversational way
 
 When making recommendations:
 - Consider walking friendliness of the city
@@ -30,6 +32,12 @@ When making recommendations:
 - Factor in night-time reliability of transit
 - Consider cost sensitivity
 - Account for user's walking and transfer tolerance
+- CRITICAL: Adapt to user's current mood:
+  - "relaxed": Prioritize scenic, calm routes even if slower
+  - "normal": Balance comfort and efficiency
+  - "hurry": Speed is top priority, tolerate more stress
+  - "tired": Minimize walking, prefer sitting (taxis/rideshare ok)
+  - "adventurous": Suggest interesting routes with local flavor
 
 You must respond with a valid JSON object matching this exact structure:
 {
@@ -95,6 +103,46 @@ async function getUserContext(userId?: string, cityId?: string): Promise<UserCon
   };
 }
 
+function getMoodDescription(mood: TravelMood | undefined): string {
+  switch (mood) {
+    case "relaxed":
+      return "The user is feeling RELAXED - they're in no rush and would prefer a calm, scenic route even if it takes longer. Avoid stressful transfers or crowded routes.";
+    case "hurry":
+      return "The user is IN A HURRY - speed is the top priority. It's okay to suggest faster but slightly more stressful options like express trains or rideshare.";
+    case "tired":
+      return "The user is TIRED - minimize walking at all costs. Prefer options where they can sit down (rideshare, taxi, or direct transit with minimal walking). Avoid stairs and long walks.";
+    case "adventurous":
+      return "The user is feeling ADVENTUROUS - suggest interesting routes that offer local flavor or scenic views. They're open to walking through interesting neighborhoods or trying local transit experiences.";
+    default:
+      return "The user is in a NORMAL mood - balance comfort and efficiency. Standard stress-optimized routing applies.";
+  }
+}
+
+function getSimulatedWeather(cityId: string): { condition: string; advice: string } {
+  // In production, this would call a weather API
+  // For now, simulate based on time and randomness for demo
+  const hour = new Date().getHours();
+  const conditions = ["clear", "cloudy", "light rain", "hot", "cold"];
+  const randomIndex = (cityId.charCodeAt(0) + hour) % conditions.length;
+  const condition = conditions[randomIndex];
+  
+  let advice = "";
+  switch (condition) {
+    case "light rain":
+      advice = "It's raining - consider covered walking routes or rideshare to stay dry.";
+      break;
+    case "hot":
+      advice = "It's hot outside - minimize outdoor walking and prefer air-conditioned transport.";
+      break;
+    case "cold":
+      advice = "It's cold - minimize waiting outdoors and prefer heated transit or rideshare.";
+      break;
+    default:
+      advice = "Weather is pleasant for outdoor travel.";
+  }
+  return { condition, advice };
+}
+
 function buildPrompt(
   request: AgentRequest,
   cityProfile: CityProfile,
@@ -106,20 +154,29 @@ function buildPrompt(
     return hour < 6 || hour >= 22;
   })();
 
+  const weather = getSimulatedWeather(request.cityId);
+  const moodDescription = getMoodDescription(request.mood);
+
   return `
 User wants to travel in ${cityProfile.name}:
 - From: ${request.origin}
 - To: ${request.destination}
 ${request.departureTime ? `- Departure: ${request.departureTime}` : "- Departure: Now"}
 
+CURRENT MOOD (IMPORTANT):
+${moodDescription}
+
+REAL-TIME CONDITIONS:
+- Weather: ${weather.condition} - ${weather.advice}
+- Time: ${isNightTime ? "Nighttime (late evening or early morning)" : "Daytime"}
+${isNightTime ? `- Night reliability in ${cityProfile.name}: ${(cityProfile.nightReliability * 100).toFixed(0)}%` : ""}
+
 City Context:
 - Walking friendliness: ${(cityProfile.walkingFriendliness * 100).toFixed(0)}%
 - Transit vs taxi preference: ${(cityProfile.transitVsTaxiBias * 100).toFixed(0)}% transit-leaning
-- Night reliability: ${(cityProfile.nightReliability * 100).toFixed(0)}%
 - Complex stations to avoid: ${cityProfile.complexStations.join(", ")}
 - Available transit: ${cityProfile.transitTypes.join(", ")}
 - Rideshare apps: ${cityProfile.rideshareApps.join(", ")}
-${isNightTime ? "- It is currently nighttime" : ""}
 
 User Preferences:
 - Walking tolerance: ${userContext.walkingTolerance}/5 (${userContext.walkingTolerance >= 4 ? "enjoys walking" : userContext.walkingTolerance <= 2 ? "prefers minimal walking" : "moderate"})
@@ -128,7 +185,9 @@ User Preferences:
 - Cost sensitivity: ${userContext.costSensitivity}/5 (${userContext.costSensitivity >= 4 ? "budget-conscious" : userContext.costSensitivity <= 2 ? "cost not a concern" : "moderate"})
 - City familiarity: ${(userContext.cityFamiliarity * 100).toFixed(0)}% (${userContext.cityFamiliarity >= 0.7 ? "knows the city well" : userContext.cityFamiliarity <= 0.3 ? "unfamiliar with the city" : "somewhat familiar"})
 
-Based on all this context, recommend the SINGLE best way to make this journey. Focus on reducing stress and cognitive load while respecting the user's preferences.
+Based on all this context - especially the user's CURRENT MOOD and WEATHER - recommend the SINGLE best way to make this journey. Your recommendation should directly reflect their mood state.
+
+In your reasoning, mention how the current mood and conditions influenced your choice.
 
 Respond ONLY with a valid JSON object matching the specified structure.`;
 }

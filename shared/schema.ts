@@ -140,6 +140,24 @@ export interface RouteStep {
   deepLink?: string; // for rideshare apps
 }
 
+// Travel mood options
+export type TravelMood = "relaxed" | "normal" | "hurry" | "tired" | "adventurous";
+
+export const TRAVEL_MOODS: { id: TravelMood; label: string; description: string; icon: string }[] = [
+  { id: "relaxed", label: "Relaxed", description: "No rush, prefer calm routes", icon: "😌" },
+  { id: "normal", label: "Normal", description: "Balanced time and comfort", icon: "🙂" },
+  { id: "hurry", label: "In a Hurry", description: "Speed matters most", icon: "⚡" },
+  { id: "tired", label: "Tired", description: "Minimal walking, prefer sitting", icon: "😴" },
+  { id: "adventurous", label: "Adventurous", description: "Open to scenic routes", icon: "🌟" },
+];
+
+// Weather context (detected by AI)
+export interface WeatherContext {
+  condition: string; // "clear", "rain", "snow", "hot", "cold"
+  temperature: number; // Celsius
+  isOutdoorFriendly: boolean;
+}
+
 // Agent request/response types
 export interface AgentRequest {
   origin: string;
@@ -147,6 +165,7 @@ export interface AgentRequest {
   departureTime?: string;
   cityId: string;
   userId?: string;
+  mood?: TravelMood;
 }
 
 export interface AgentResponse {

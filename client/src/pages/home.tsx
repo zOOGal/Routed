@@ -6,18 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LocationInput } from "@/components/location-input";
 import { CitySelector } from "@/components/city-selector";
+import { MoodSelector } from "@/components/mood-selector";
 import { RouteCard } from "@/components/route-card";
 import { LoadingState } from "@/components/loading-state";
 import { EmptyState } from "@/components/empty-state";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { RouteRecommendation, AgentResponse } from "@shared/schema";
+import type { RouteRecommendation, AgentResponse, TravelMood } from "@shared/schema";
 
 export default function Home() {
   const [, setLocation] = useLocation();
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   const [cityId, setCityId] = useState("nyc");
+  const [mood, setMood] = useState<TravelMood>("normal");
   const [recommendation, setRecommendation] = useState<RouteRecommendation | null>(null);
   const [tripId, setTripId] = useState<string | null>(null);
 
@@ -27,6 +29,7 @@ export default function Home() {
         origin,
         destination,
         cityId,
+        mood,
       });
       return await response.json() as AgentResponse;
     },
@@ -101,22 +104,25 @@ export default function Home() {
 
         <Card className="mb-6">
           <CardContent className="p-4 space-y-4">
-            <LocationInput
-              label="From"
-              placeholder="Enter starting point"
-              value={origin}
-              onChange={setOrigin}
-              icon="origin"
-              testId="input-origin"
-            />
-            <LocationInput
-              label="To"
-              placeholder="Where are you going?"
-              value={destination}
-              onChange={setDestination}
-              icon="destination"
-              testId="input-destination"
-            />
+            <MoodSelector selectedMood={mood} onMoodChange={setMood} />
+            <div className="border-t pt-4 space-y-4">
+              <LocationInput
+                label="From"
+                placeholder="Enter starting point"
+                value={origin}
+                onChange={setOrigin}
+                icon="origin"
+                testId="input-origin"
+              />
+              <LocationInput
+                label="To"
+                placeholder="Where are you going?"
+                value={destination}
+                onChange={setDestination}
+                icon="destination"
+                testId="input-destination"
+              />
+            </div>
             <Button 
               className="w-full gap-2" 
               size="lg"
