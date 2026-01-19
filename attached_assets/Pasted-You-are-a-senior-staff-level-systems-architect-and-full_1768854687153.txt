@@ -1,0 +1,182 @@
+You are a senior staff-level systems architect and full-stack engineer.
+
+You are extending an existing AI transportation agent MVP into a production-grade, scalable architecture.
+
+Product Definition (Read Carefully):
+
+This app is an AI mobility agent — NOT a maps app.
+
+Its job is to:
+- Decide the best way for a user to move in a city
+- Optimize for stress, familiarity, and cognitive load
+- Learn user preferences over time
+- Work across multiple cities worldwide
+- Execute trips, not just suggest routes
+
+Core Philosophy:
+- Opinionated, single recommendation
+- Subjective optimization (stress > speed)
+- Agentic behavior (decide, adapt, explain)
+- Subscription-first (no ads, no ride marketplace)
+
+---
+
+ARCHITECTURE GOALS
+
+Design and implement a modular, extensible system with these layers:
+
+1. User & Memory Layer
+2. Agent Reasoning Layer
+3. City Mobility Intelligence Layer
+4. Execution & Integration Layer
+5. API & Frontend Layer
+
+You must:
+- Design data models
+- Define services
+- Show file/folder structure
+- Implement scaffolding code
+- Clearly separate responsibilities
+
+Avoid overengineering, but make future expansion obvious.
+
+---
+
+1️⃣ USER & MEMORY LAYER
+
+Design a persistent user model that includes:
+
+- Global mobility preferences:
+  - walking tolerance
+  - transfer tolerance
+  - stress vs speed bias
+  - cost sensitivity
+- City-specific familiarity scores
+- Learned behavioral signals:
+  - overrides
+  - abandonments
+  - repeated choices
+
+Requirements:
+- Store preferences in a database (SQLite or Postgres-compatible)
+- Implement silent learning (no extra user questions)
+- Expose a clean interface for the agent to read/update memory
+
+---
+
+2️⃣ AGENT REASONING LAYER (CORE)
+
+Refactor the AI logic into a dedicated Agent service.
+
+Responsibilities:
+- Accept user intent (origin, destination, time)
+- Pull user memory
+- Pull city intelligence
+- Evaluate route candidates
+- Choose ONE best route
+- Generate explainable reasoning
+
+Implementation:
+- Use Google Gemini as the reasoning engine
+- Define a system prompt that makes Gemini behave like a calm, confident travel assistant
+- Force structured JSON output from Gemini
+- Add safeguards for hallucinations and invalid output
+
+Agent must support:
+- Stress-optimized routing
+- City unfamiliarity mode
+- Dynamic re-evaluation when conditions change
+
+---
+
+3️⃣ CITY MOBILITY INTELLIGENCE LAYER
+
+Design a City Intelligence system.
+
+Each city must have:
+- A JSON-based mobility profile:
+  - known complex stations
+  - night reliability
+  - transit vs taxi bias
+  - walking friendliness
+- A Cognitive Load Index (CLI) scoring system
+
+Requirements:
+- City profiles must be editable without redeploying the app
+- Agent must consume city intelligence during reasoning
+- Start with at least 3 cities (NYC, Tokyo, London)
+
+This layer must be independent of Google Maps.
+
+---
+
+4️⃣ EXECUTION & INTEGRATION LAYER
+
+Design a Trip Execution system.
+
+Responsibilities:
+- Transition from "decision" → "execution"
+- Provide step-based guidance
+- Support dynamic replanning
+
+Implement:
+- Trip session model
+- Execution state machine (planned → in-progress → completed)
+- Replanning triggers:
+  - delay
+  - weather
+  - missed step
+
+Integrations (Phase 1):
+- Deep links to Uber / Lyft
+- Transit handoff (links only, no payments)
+
+No marketplace logic.
+
+---
+
+5️⃣ API & FRONTEND LAYER
+
+Backend:
+- Node.js
+- REST API with clear separation:
+  - /agent
+  - /users
+  - /cities
+  - /trips
+
+Frontend:
+- React
+- Mobile-first UX
+- Calm, minimal design
+- One primary recommendation
+- Explainability always visible
+
+---
+
+NON-GOALS (DO NOT BUILD):
+
+- Payments
+- Ride booking inside app
+- Ads
+- Social features
+- Custom map rendering
+- Multi-route lists
+
+---
+
+DELIVERABLES
+
+You must generate:
+1. High-level system diagram (in text)
+2. Folder and file structure
+3. Database schema
+4. Core service interfaces
+5. Example Gemini system prompt
+6. Initial scaffolding code
+7. README explaining architecture and future phases
+
+Focus on correctness, clarity, and extensibility.
+Prefer clarity over cleverness.
+
+Build this incrementally and explain decisions in comments.
