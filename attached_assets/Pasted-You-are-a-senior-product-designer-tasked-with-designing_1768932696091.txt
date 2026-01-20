@@ -1,0 +1,84 @@
+You are a senior product designer tasked with designing the UX for an AI mobility agent, inspired deeply by the principles of *侘寂美學 (Wabi-Sabi)* as articulated in the Silphium Design philosophy. This is not a minimal clone of a standard template — it must embody a calm, organic, human-centric, and emotionally resonant experience that reflects these Wabi-Sabi principles:
+
+- **Kanso (Simplicity):** Only the essential elements should be present; generous use of negative space (Ma) to calm and focus the user. :contentReference[oaicite:1]{index=1}  
+- **Fukinsei (Asymmetry / Organic Balance):** The layout should avoid rigid symmetry; slight offsets and natural balance feel more alive than grids. :contentReference[oaicite:2]{index=2}  
+- **Shibui (Quiet, Subtle Beauty):** Avoid loud, flashy design; use muted colors and subtle motion that reward deeper observation. :contentReference[oaicite:3]{index=3}  
+- **Shizen (Naturalness):** Use organic shapes, earthy tones, and tactile textures to evoke natural materials even in digital UI. :contentReference[oaicite:4]{index=4}  
+- **Yūgen (Subtle Depth):** Reveal meaning gradually; let small nuances invite further engagement rather than shouting information. :contentReference[oaicite:5]{index=5}  
+- **Datsuzoku (Freedom from Convention):** Break standard UI conventions thoughtfully where it improves human experience — not for novelty, but to feel alive. :contentReference[oaicite:6]{index=6}  
+- **Seijaku (Tranquility):** Create stillness through spacing, gentle pacing, and thoughtful interactions. :contentReference[oaicite:7]{index=7}  
+
+---
+
+### DESIGN DIRECTIVES (High-Priority)
+
+**1) Home / Intent Screen**  
+Focus on **Kanso** and **Seijaku**:
+- Clean, uncluttered view with generous negative space.  
+- Only the essential — destination input and a tiny, subdued 💬 button for optional user notes.  
+- Avoid heavy lines, boxes, or borders that divide the space rigidly.  
+- Layout should be slightly **off-center** (Fukinsei), e.g., the search input subtly shifted slightly left of center for organic balance.
+
+**2) Colors & Textures**  
+Apply **Shibui** and **Shizen**:
+- Earthy, muted palette (soft beiges, misty grays, muted greens).  
+- Introduce extremely subtle background texture (e.g., light paper grain) so full white is never flat or harsh.  
+- Avoid high-contrast blacks and whites.  
+
+**3) Typography & Elements**  
+Reflect **Kanso** with humanist text:
+- Use a warm, humanist sans typeface (or gentle serif if it feels more tactile).  
+- Very generous line spacing; avoid condensed typography.  
+- Slightly imperfect iconography (hand-drawn or organic stroke).  
+
+**4) Spatial Composition**  
+Embed **Fukinsei** and **Seijaku** in layout:
+- Headers, inputs, and controls should have generous padding and not adhere to rigid grid lines.  
+- Slight offsets — e.g., buttons not perfectly aligned on the same axis — to create a natural rhythm.
+
+**5) Motion & Interaction**  
+Use **Yūgen**:
+- Very subtle fade-in and easing animations rather than sharp transitions.  
+- Fractional motion that feels like breathing, not abrupt.  
+
+**6) Microcopy & Tone**  
+Match the aesthetic:
+- Use humble, respectful, and human language.  
+- Avoid technical or hard commands; favor *invitation* language.  
+- E.g., “Anything I should know?” for the note button, not “Add prompt.”  
+
+---
+
+### FEATURE SPECIFIC UX BEHAVIORS
+
+**A) Destination Input with Subtle 💬 Note Button**  
+- The input card should feel calm and organic — soft shape, tactile shadow, imperfect curvature.  
+- The 💬 button should be muted, small, and slightly off-aligned to the right side to signal optionality and human-centric design.
+
+**B) Progressive Disclosure**  
+- Only after destination entry, gently reveal further controls (unfamiliar toggle, sliders for calm vs fast, budget mode).  
+- Reveal controls via subtle, natural motion (not rigid expand/collapse).
+
+**C) Unexpected but Purposeful Asymmetry**  
+In layout, occasionally break symmetry to feel alive, not template-like — e.g. slightly offset the slider track or the footer text so it feels human, not machined.
+
+---
+
+### DELIVERABLES
+
+Produce high-fidelity screens for:
+1. **Home / Intent Screen** (with organic asymmetry and note button)  
+2. **Destination Entered State** (progressive reveal, gentle hierarchy)  
+3. **Decision Preview Panel** (quiet, subtle guidance)  
+4. **Execution Guidance** (calm step-based UI)  
+
+Include a style system that defines:
+- Muted color palette  
+- Subtle textures  
+- Humanist typography scale  
+- Organic spacing rules  
+- Interaction motion tokens  
+
+Design these not as a “template” but as a *living, human UX* that embraces imperfection, slow pace, and attentive calm.
+
+Refer explicitly to the Wabi-Sabi principles: Kanso, Fukinsei, Shibui, Shizen, Yūgen, Datsuzoku, and Seijaku throughout the design.

@@ -9,12 +9,37 @@ Movi is an AI-powered mobility agent that helps users decide the best way to tra
 - **Agentic**: Decides, adapts, and explains its reasoning
 - **Context-Aware**: Learns user preferences and city familiarity
 
+## Design System - Wabi-Sabi Aesthetic
+
+The UI follows the Japanese aesthetic philosophy of Wabi-Sabi, emphasizing:
+
+### Principles Applied
+- **Kanso (Simplicity)**: Generous negative space, minimal UI elements
+- **Fukinsei (Asymmetry)**: Slightly off-center layouts, organic border radii
+- **Shibui (Quiet Beauty)**: Muted earthy colors, subtle interactions
+- **Shizen (Naturalness)**: Paper texture background, organic shapes
+- **Yūgen (Subtle Depth)**: Progressive disclosure, gentle animations
+- **Seijaku (Tranquility)**: Calm pacing, breathing animations
+
+### Color Palette
+- **Light Mode**: Warm cream backgrounds (HSL 40 30% 96%), sage green primary (HSL 150 25% 42%)
+- **Dark Mode**: Warm charcoal (HSL 30 15% 10%), softer sage accents
+
+### Typography
+- Lowercase, humble microcopy throughout
+- Humanist sans-serif (Inter)
+- Generous line spacing
+
+### Animations
+- `animate-gentle-fade`: Subtle fade-in with slight vertical movement
+- `animate-breathe`: Pulsing opacity for loading states
+
 ## Architecture
 
 ### Layers
 1. **User & Memory Layer** - User preferences, city familiarity scores, behavioral signals
 2. **Agent Reasoning Layer** - Gemini-powered AI for route decisions
-3. **City Mobility Intelligence** - City profiles with cognitive load scoring (NYC, Tokyo, London)
+3. **City Mobility Intelligence** - City profiles with cognitive load scoring (NYC, Tokyo, Berlin)
 4. **Execution Layer** - Trip state machine (planned → in_progress → completed)
 5. **API & Frontend Layer** - REST API + React mobile-first UI
 
@@ -29,14 +54,14 @@ Movi is an AI-powered mobility agent that helps users decide the best way to tra
 ```
 ├── client/src/
 │   ├── components/     # Reusable UI components
-│   │   ├── city-selector.tsx
-│   │   ├── location-input.tsx
-│   │   ├── route-card.tsx
-│   │   ├── trip-step.tsx
-│   │   ├── stress-meter.tsx
+│   │   ├── city-selector.tsx      # City dropdown (muted styling)
+│   │   ├── preference-sliders.tsx # Calm/Fast, Economy/Comfort sliders
+│   │   ├── route-card.tsx         # Route recommendation display
+│   │   ├── loading-state.tsx      # Breathing circle animation
+│   │   ├── empty-state.tsx        # Minimal empty states
 │   │   └── ...
 │   ├── pages/          # Page components
-│   │   ├── home.tsx    # Main trip planning
+│   │   ├── home.tsx    # Main trip planning (Wabi-Sabi design)
 │   │   ├── trip.tsx    # Trip execution view
 │   │   ├── preferences.tsx
 │   │   └── history.tsx
@@ -44,8 +69,8 @@ Movi is an AI-powered mobility agent that helps users decide the best way to tra
 ├── server/
 │   ├── routes.ts       # API endpoints
 │   ├── storage.ts      # Data persistence layer
-│   ├── agent-service.ts    # Gemini AI integration
-│   └── city-intelligence.ts # City profiles
+│   ├── agent-service.ts    # Gemini AI integration with slider enforcement
+│   └── city-intelligence.ts # City profiles (NYC, Tokyo, Berlin)
 └── shared/
     └── schema.ts       # Shared types and schemas
 ```
@@ -54,6 +79,7 @@ Movi is an AI-powered mobility agent that helps users decide the best way to tra
 
 ### Agent
 - `POST /api/agent/recommend` - Get AI route recommendation
+  - Body: origin, destination, cityId, calmVsFast, economyVsComfort, unfamiliarWithCity, userNote (optional)
 
 ### Cities
 - `GET /api/cities` - List all supported cities
@@ -84,10 +110,15 @@ Currently supported: NYC, Tokyo, Berlin
 
 ## User Preferences
 
-### Real-time Preferences (set before each search)
+### Real-time Preferences (progressive disclosure - appear after entering destination)
 - **Calm ↔ Fast**: 0-100 slider (0 = prioritize calm routes, 100 = prioritize speed)
 - **Economy ↔ Comfort**: 0-100 slider (0 = cheapest options, 100 = most comfortable)
-- **City Familiarity Toggle**: "I'm unfamiliar with this city" - simpler routes when enabled
+- **City Familiarity Toggle**: "this city is new to me" - simpler routes when enabled
+- **Optional Note**: Context for the AI (e.g., "I have a heavy bag")
+
+### Slider Enforcement
+- Economy ≤ 30: System enforces transit/walking (never rideshare)
+- Economy > 30: AI chooses based on conditions
 
 ### Saved Preferences (in Preferences page)
 - **Walking Tolerance**: 1-5 scale
@@ -102,6 +133,12 @@ The app runs on port 5000 with the `npm run dev` command.
 
 ### Adding New Cities
 Edit `server/city-intelligence.ts` to add new city profiles.
+
+### Design Guidelines
+- Maintain lowercase microcopy throughout the UI
+- Use organic border-radii (slightly imperfect)
+- Preserve generous negative space
+- Keep animations subtle and calming
 
 ### Future Phases
 - PostgreSQL persistence

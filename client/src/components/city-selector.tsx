@@ -8,9 +8,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const CITIES = [
-  { id: "nyc", name: "New York City", country: "USA", flag: "US" },
-  { id: "tokyo", name: "Tokyo", country: "Japan", flag: "JP" },
-  { id: "berlin", name: "Berlin", country: "Germany", flag: "DE" },
+  { id: "nyc", name: "New York City", country: "USA" },
+  { id: "tokyo", name: "Tokyo", country: "Japan" },
+  { id: "berlin", name: "Berlin", country: "Germany" },
 ];
 
 interface CitySelectorProps {
@@ -24,24 +24,31 @@ export function CitySelector({ selectedCity, onCityChange }: CitySelectorProps) 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="gap-2" data-testid="button-city-selector">
-          <MapPin className="h-4 w-4 text-primary" />
-          <span className="font-medium">{city.name}</span>
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+        <Button 
+          variant="ghost" 
+          className="gap-2 text-muted-foreground/70 hover:text-foreground font-normal h-auto py-1.5 px-2 -ml-2"
+          data-testid="button-city-selector"
+        >
+          <MapPin className="h-3.5 w-3.5" />
+          <span className="text-sm">{city.name}</span>
+          <ChevronDown className="h-3 w-3 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-56">
+      <DropdownMenuContent 
+        align="start" 
+        className="w-48 rounded-xl border-border/50"
+      >
         {CITIES.map((c) => (
           <DropdownMenuItem
             key={c.id}
             onClick={() => onCityChange(c.id)}
-            className="gap-3"
+            className="gap-3 py-2.5 rounded-lg cursor-pointer"
             data-testid={`menu-item-city-${c.id}`}
           >
-            <MapPin className="h-4 w-4 text-muted-foreground" />
+            <MapPin className="h-3.5 w-3.5 text-muted-foreground/50" />
             <div className="flex flex-col">
-              <span className="font-medium">{c.name}</span>
-              <span className="text-xs text-muted-foreground">{c.country}</span>
+              <span className="text-sm">{c.name}</span>
+              <span className="text-xs text-muted-foreground/50">{c.country}</span>
             </div>
           </DropdownMenuItem>
         ))}

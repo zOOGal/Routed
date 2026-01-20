@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
-import { Navigation, Settings, History, Sparkles, MapPin } from "lucide-react";
+import { MessageCircle, Sparkles, MapPin, History, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { CitySelector } from "@/components/city-selector";
 import { PreferenceSliders } from "@/components/preference-sliders";
@@ -17,12 +16,15 @@ import type { RouteRecommendation, AgentResponse } from "@shared/schema";
 export default function Home() {
   const [, setLocation] = useLocation();
   const [destination, setDestination] = useState("");
+  const [userNote, setUserNote] = useState("");
+  const [showNote, setShowNote] = useState(false);
   const [cityId, setCityId] = useState("nyc");
-  const [calmVsFast, setCalmVsFast] = useState(30); // Default slightly calm
-  const [economyVsComfort, setEconomyVsComfort] = useState(50); // Default balanced
+  const [calmVsFast, setCalmVsFast] = useState(30);
+  const [economyVsComfort, setEconomyVsComfort] = useState(50);
   const [unfamiliarWithCity, setUnfamiliarWithCity] = useState(false);
   const [recommendation, setRecommendation] = useState<RouteRecommendation | null>(null);
   const [tripId, setTripId] = useState<string | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const getRecommendation = useMutation({
     mutationFn: async () => {
@@ -33,12 +35,14 @@ export default function Home() {
         calmVsFast,
         economyVsComfort,
         unfamiliarWithCity,
+        userNote: userNote.trim() || undefined,
       });
       return await response.json() as AgentResponse;
     },
     onSuccess: (data) => {
       setRecommendation(data.recommendation);
       setTripId(data.tripId);
+      setHasSearched(true);
     },
   });
 
@@ -66,33 +70,37 @@ export default function Home() {
     }
   };
 
+  const hasDestination = destination.trim().length > 0;
+
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b">
-        <div className="container max-w-lg mx-auto px-4 py-3">
+    <div className="min-h-screen">
+      {/* Minimal header - Kanso (simplicity) */}
+      <header className="fixed top-0 left-0 right-0 z-50">
+        <div className="max-w-2xl mx-auto px-6 py-5">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-                <Navigation className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold">Movi</span>
+            {/* Logo - slightly off-center feel with asymmetric spacing */}
+            <div className="flex items-center gap-3 pl-1">
+              <span className="text-xl font-medium tracking-tight">movi</span>
             </div>
-            <div className="flex items-center gap-1">
+            {/* Muted navigation icons */}
+            <div className="flex items-center gap-0.5 opacity-60 hover:opacity-100 transition-opacity duration-500">
               <Button 
                 variant="ghost" 
                 size="icon"
+                className="h-9 w-9 rounded-full"
                 onClick={() => setLocation("/history")}
                 data-testid="button-history"
               >
-                <History className="h-5 w-5" />
+                <History className="h-4 w-4" />
               </Button>
               <Button 
                 variant="ghost" 
                 size="icon"
+                className="h-9 w-9 rounded-full"
                 onClick={() => setLocation("/preferences")}
                 data-testid="button-preferences"
               >
-                <Settings className="h-5 w-5" />
+                <Settings className="h-4 w-4" />
               </Button>
               <ThemeToggle />
             </div>
@@ -100,31 +108,81 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="container max-w-lg mx-auto px-4 py-6">
-        <div className="mb-6">
+      {/* Main content - generous negative space (Ma) */}
+      <main className="max-w-md mx-auto px-6 pt-28 pb-12">
+        {/* City selector - subtle, secondary */}
+        <div className="mb-10 opacity-70">
           <CitySelector selectedCity={cityId} onCityChange={setCityId} />
         </div>
 
-        <Card className="mb-6">
-          <CardContent className="p-5 space-y-6">
-            <div className="space-y-2">
-              <h2 className="text-xl font-semibold">Where are you going?</h2>
+        {/* Intent area - Kanso & Seijaku */}
+        <div className="space-y-8">
+          {/* Destination input - organic, calm shape */}
+          <div 
+            className="relative p-6 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 shadow-sm animate-gentle-fade"
+            style={{ 
+              marginLeft: '-4px', // Fukinsei - slight asymmetry
+              borderRadius: '1.25rem 1rem 1.25rem 1rem' // Organic, imperfect curvature
+            }}
+          >
+            <div className="space-y-4">
+              {/* Warm, inviting heading - Kanso lowercase */}
+              <h1 className="text-2xl font-normal tracking-tight leading-relaxed">
+                where would you like to go?
+              </h1>
+              
+              {/* Input with organic feel */}
               <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
                 <Input
-                  placeholder="Enter destination"
+                  placeholder="Enter a place..."
                   value={destination}
                   onChange={(e) => setDestination(e.target.value)}
-                  className="pl-10"
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  className="pl-11 pr-12 py-6 text-base bg-background/50 border-border/40 rounded-xl placeholder:text-muted-foreground/50 focus:ring-1 focus:ring-primary/30"
                   data-testid="input-destination"
                 />
+                {/* Subtle note button - Shibui (quiet beauty) */}
+                <button
+                  onClick={() => setShowNote(!showNote)}
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all duration-300 ${
+                    showNote ? 'bg-primary/10 text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground/70'
+                  }`}
+                  style={{ marginRight: '2px' }} // Fukinsei - slight offset
+                  title="Anything I should know?"
+                  data-testid="button-note"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                </button>
               </div>
-              <p className="text-sm text-muted-foreground">
-                From your current location
+
+              {/* Note input - progressive disclosure (Yūgen) */}
+              {showNote && (
+                <div className="animate-gentle-fade">
+                  <textarea
+                    placeholder="Anything I should know? (optional)"
+                    value={userNote}
+                    onChange={(e) => setUserNote(e.target.value)}
+                    className="w-full p-4 text-sm bg-background/30 border border-border/30 rounded-xl resize-none placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
+                    rows={2}
+                    data-testid="input-note"
+                  />
+                </div>
+              )}
+
+              {/* Origin hint - humble, quiet */}
+              <p className="text-sm text-muted-foreground/60 pl-1">
+                from your current location
               </p>
             </div>
+          </div>
 
-            <div className="border-t pt-5">
+          {/* Preferences - progressive disclosure (Yūgen) */}
+          {hasDestination && (
+            <div 
+              className="animate-gentle-fade px-2"
+              style={{ animationDelay: '0.1s' }}
+            >
               <PreferenceSliders
                 calmVsFast={calmVsFast}
                 economyVsComfort={economyVsComfort}
@@ -134,49 +192,72 @@ export default function Home() {
                 onUnfamiliarChange={setUnfamiliarWithCity}
               />
             </div>
+          )}
 
-            <Button 
-              className="w-full gap-2" 
-              size="lg"
-              onClick={handleSearch}
-              disabled={!destination.trim() || getRecommendation.isPending}
-              data-testid="button-find-route"
+          {/* Search button - appears with destination */}
+          {hasDestination && (
+            <div 
+              className="animate-gentle-fade pt-2"
+              style={{ 
+                animationDelay: '0.2s',
+                paddingLeft: '8px' // Fukinsei - asymmetric alignment
+              }}
             >
-              <Sparkles className="h-4 w-4" />
-              Find Best Route
-            </Button>
-
-            <p className="text-xs text-center text-muted-foreground">
-              Guided by your mobility agent
-            </p>
-          </CardContent>
-        </Card>
-
-        {getRecommendation.isPending && <LoadingState />}
-
-        {getRecommendation.isError && (
-          <EmptyState type="error" />
-        )}
-
-        {recommendation && !getRecommendation.isPending && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-muted-foreground">
-                AI Recommendation
-              </span>
+              <Button 
+                className="w-full py-6 text-base font-normal rounded-xl gap-2 transition-all duration-300" 
+                size="lg"
+                onClick={handleSearch}
+                disabled={!destination.trim() || getRecommendation.isPending}
+                data-testid="button-find-route"
+              >
+                <Sparkles className="h-4 w-4 animate-breathe" />
+                find the way
+              </Button>
+              
+              {/* Tagline - Seijaku (tranquility) */}
+              <p className="text-xs text-center text-muted-foreground/50 mt-4 tracking-wide">
+                guided by your mobility companion
+              </p>
             </div>
-            <RouteCard 
-              recommendation={recommendation} 
-              onSelect={handleStartTrip}
-              isLoading={startTrip.isPending}
-            />
-          </div>
-        )}
+          )}
+        </div>
 
-        {!recommendation && !getRecommendation.isPending && !getRecommendation.isError && (
-          <EmptyState type="search" />
-        )}
+        {/* Results area - gentle reveal */}
+        <div className="mt-12">
+          {getRecommendation.isPending && (
+            <div className="animate-gentle-fade">
+              <LoadingState />
+            </div>
+          )}
+
+          {getRecommendation.isError && (
+            <div className="animate-gentle-fade">
+              <EmptyState type="error" />
+            </div>
+          )}
+
+          {recommendation && !getRecommendation.isPending && (
+            <div className="space-y-5 animate-gentle-fade">
+              <div className="flex items-center gap-2 pl-1 opacity-60">
+                <Sparkles className="h-3.5 w-3.5" />
+                <span className="text-xs tracking-wide">
+                  suggested journey
+                </span>
+              </div>
+              <RouteCard 
+                recommendation={recommendation} 
+                onSelect={handleStartTrip}
+                isLoading={startTrip.isPending}
+              />
+            </div>
+          )}
+
+          {!hasSearched && !getRecommendation.isPending && !getRecommendation.isError && !recommendation && (
+            <div className="animate-gentle-fade opacity-50">
+              <EmptyState type="search" />
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );

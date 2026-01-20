@@ -1,11 +1,10 @@
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Leaf, Zap, Wallet, Sparkles } from "lucide-react";
 
 interface PreferenceSlidersProps {
-  calmVsFast: number; // 0 = calm, 100 = fast
-  economyVsComfort: number; // 0 = economy, 100 = comfort
+  calmVsFast: number;
+  economyVsComfort: number;
   unfamiliarWithCity: boolean;
   onCalmVsFastChange: (value: number) => void;
   onEconomyVsComfortChange: (value: number) => void;
@@ -21,61 +20,53 @@ export function PreferenceSliders({
   onUnfamiliarChange,
 }: PreferenceSlidersProps) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
+      {/* Calm vs Fast - organic spacing */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <Leaf className="h-4 w-4" />
-            <span>Calm</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <span>Fast</span>
-            <Zap className="h-4 w-4" />
-          </div>
+        <div className="flex justify-between items-center text-sm">
+          <span className="text-muted-foreground/80">calm</span>
+          <span className="text-muted-foreground/80">swift</span>
         </div>
         <Slider
           value={[calmVsFast]}
-          onValueChange={(v) => onCalmVsFastChange(v[0])}
+          onValueChange={([value]) => onCalmVsFastChange(value)}
           max={100}
           step={1}
-          className="cursor-pointer"
+          className="w-full"
           data-testid="slider-calm-fast"
         />
       </div>
 
-      <div className="space-y-3">
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <Wallet className="h-4 w-4" />
-            <span>Economy</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <span>Comfort</span>
-            <Sparkles className="h-4 w-4" />
-          </div>
+      {/* Economy vs Comfort - asymmetric positioning */}
+      <div className="space-y-3" style={{ marginLeft: '2px' }}>
+        <div className="flex justify-between items-center text-sm">
+          <span className="text-muted-foreground/80">mindful</span>
+          <span className="text-muted-foreground/80">comfort</span>
         </div>
         <Slider
           value={[economyVsComfort]}
-          onValueChange={(v) => onEconomyVsComfortChange(v[0])}
+          onValueChange={([value]) => onEconomyVsComfortChange(value)}
           max={100}
           step={1}
-          className="cursor-pointer"
+          className="w-full"
           data-testid="slider-economy-comfort"
         />
       </div>
 
-      <div className="flex items-center gap-3 py-2">
+      {/* City familiarity toggle - humble, optional feel */}
+      <div className="flex items-center gap-3 pt-2 opacity-80">
         <Checkbox
           id="unfamiliar-toggle"
           checked={unfamiliarWithCity}
           onCheckedChange={(checked) => onUnfamiliarChange(checked === true)}
+          className="border-border/60"
           data-testid="checkbox-unfamiliar"
         />
         <Label 
           htmlFor="unfamiliar-toggle" 
-          className="text-sm text-muted-foreground cursor-pointer"
+          className="text-sm text-muted-foreground/70 cursor-pointer font-normal"
         >
-          I'm unfamiliar with this city
+          this city is new to me
         </Label>
       </div>
     </div>

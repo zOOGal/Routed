@@ -2,66 +2,74 @@
 @tailwind components;
 @tailwind utilities;
 
-/* LIGHT MODE - Calm, minimal travel-focused palette */
+/* LIGHT MODE - Wabi-Sabi: Muted, earthy, organic palette */
 :root {
-  --button-outline: rgba(0,0,0, .10);
-  --badge-outline: rgba(0,0,0, .05);
+  --button-outline: rgba(0,0,0, .08);
+  --badge-outline: rgba(0,0,0, .04);
 
-  --opaque-button-border-intensity: -8;
+  --opaque-button-border-intensity: -6;
 
-  --elevate-1: rgba(0,0,0, .03);
-  --elevate-2: rgba(0,0,0, .08);
+  --elevate-1: rgba(0,0,0, .02);
+  --elevate-2: rgba(0,0,0, .05);
 
-  --background: 210 40% 98%;
-  --foreground: 222 47% 11%;
+  /* Warm paper-like background with subtle warmth */
+  --background: 40 30% 96%;
+  --foreground: 30 15% 25%;
 
-  --border: 214 32% 91%;
+  /* Soft, organic borders */
+  --border: 35 20% 88%;
 
-  --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  --card-border: 214 32% 91%;
+  /* Cards with warm cream tone */
+  --card: 45 40% 98%;
+  --card-foreground: 30 15% 25%;
+  --card-border: 35 15% 90%;
 
-  --sidebar: 210 40% 96%;
-  --sidebar-foreground: 222 47% 11%;
-  --sidebar-border: 214 32% 91%;
-  --sidebar-primary: 199 89% 48%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 199 89% 94%;
-  --sidebar-accent-foreground: 199 89% 30%;
-  --sidebar-ring: 199 89% 48%;
+  --sidebar: 40 25% 94%;
+  --sidebar-foreground: 30 15% 25%;
+  --sidebar-border: 35 20% 88%;
+  --sidebar-primary: 150 25% 45%;
+  --sidebar-primary-foreground: 45 40% 98%;
+  --sidebar-accent: 150 20% 90%;
+  --sidebar-accent-foreground: 150 25% 30%;
+  --sidebar-ring: 150 25% 45%;
 
-  --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
-  --popover-border: 214 32% 91%;
+  --popover: 45 40% 98%;
+  --popover-foreground: 30 15% 25%;
+  --popover-border: 35 15% 90%;
 
-  --primary: 199 89% 48%;
-  --primary-foreground: 0 0% 100%;
+  /* Muted sage green primary - Shizen (naturalness) */
+  --primary: 150 25% 42%;
+  --primary-foreground: 45 40% 98%;
 
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222 47% 11%;
+  /* Warm stone secondary */
+  --secondary: 35 15% 92%;
+  --secondary-foreground: 30 15% 30%;
 
-  --muted: 210 40% 96%;
-  --muted-foreground: 215 16% 47%;
+  /* Soft muted tones */
+  --muted: 35 15% 93%;
+  --muted-foreground: 30 10% 50%;
 
-  --accent: 172 66% 50%;
-  --accent-foreground: 0 0% 100%;
+  /* Earthy accent - moss green */
+  --accent: 140 20% 50%;
+  --accent-foreground: 45 40% 98%;
 
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 0 0% 100%;
+  --destructive: 10 50% 55%;
+  --destructive-foreground: 45 40% 98%;
 
-  --input: 214 32% 91%;
-  --ring: 199 89% 48%;
+  --input: 35 20% 90%;
+  --ring: 150 25% 45%;
   
-  --chart-1: 199 89% 48%;
-  --chart-2: 172 66% 50%;
-  --chart-3: 262 83% 58%;
-  --chart-4: 43 96% 56%;
-  --chart-5: 339 90% 51%;
+  --chart-1: 150 25% 45%;
+  --chart-2: 140 20% 50%;
+  --chart-3: 30 30% 55%;
+  --chart-4: 45 40% 60%;
+  --chart-5: 10 30% 55%;
 
-  --font-sans: 'Inter', sans-serif;
-  --font-serif: Georgia, serif;
+  /* Humanist typography - warm and organic */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-serif: Georgia, 'Times New Roman', serif;
   --font-mono: 'JetBrains Mono', monospace;
-  --radius: .5rem;
+  --radius: .625rem;
   --shadow-2xs: 0px 1px 2px 0px rgba(0,0,0,0.05);
   --shadow-xs: 0px 1px 3px 0px rgba(0,0,0,0.06);
   --shadow-sm: 0px 2px 4px 0px rgba(0,0,0,0.06);
@@ -95,60 +103,64 @@
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 }
 
+/* DARK MODE - Wabi-Sabi: Deep, warm, organic night palette */
 .dark {
-  --button-outline: rgba(255,255,255, .10);
-  --badge-outline: rgba(255,255,255, .05);
+  --button-outline: rgba(255,255,255, .08);
+  --badge-outline: rgba(255,255,255, .04);
 
-  --opaque-button-border-intensity: 9;
+  --opaque-button-border-intensity: 7;
 
-  --elevate-1: rgba(255,255,255, .04);
-  --elevate-2: rgba(255,255,255, .09);
+  --elevate-1: rgba(255,255,255, .03);
+  --elevate-2: rgba(255,255,255, .07);
 
-  --background: 222 47% 8%;
-  --foreground: 210 40% 98%;
+  /* Warm charcoal with subtle brown undertone */
+  --background: 30 15% 10%;
+  --foreground: 40 20% 90%;
 
-  --border: 217 33% 17%;
+  --border: 30 12% 18%;
 
-  --card: 222 47% 11%;
-  --card-foreground: 210 40% 98%;
-  --card-border: 217 33% 17%;
+  /* Deep warm card */
+  --card: 30 12% 13%;
+  --card-foreground: 40 20% 90%;
+  --card-border: 30 10% 20%;
 
-  --sidebar: 222 47% 10%;
-  --sidebar-foreground: 210 40% 98%;
-  --sidebar-border: 217 33% 17%;
-  --sidebar-primary: 199 89% 48%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 199 89% 20%;
-  --sidebar-accent-foreground: 199 89% 80%;
-  --sidebar-ring: 199 89% 48%;
+  --sidebar: 30 15% 11%;
+  --sidebar-foreground: 40 20% 90%;
+  --sidebar-border: 30 12% 18%;
+  --sidebar-primary: 150 25% 55%;
+  --sidebar-primary-foreground: 30 15% 10%;
+  --sidebar-accent: 150 15% 20%;
+  --sidebar-accent-foreground: 150 20% 75%;
+  --sidebar-ring: 150 25% 55%;
 
-  --popover: 222 47% 11%;
-  --popover-foreground: 210 40% 98%;
-  --popover-border: 217 33% 17%;
+  --popover: 30 12% 13%;
+  --popover-foreground: 40 20% 90%;
+  --popover-border: 30 10% 20%;
 
-  --primary: 199 89% 48%;
-  --primary-foreground: 0 0% 100%;
+  /* Muted sage in dark mode */
+  --primary: 150 25% 55%;
+  --primary-foreground: 30 15% 10%;
 
-  --secondary: 217 33% 17%;
-  --secondary-foreground: 210 40% 98%;
+  --secondary: 30 12% 18%;
+  --secondary-foreground: 40 20% 85%;
 
-  --muted: 217 33% 17%;
-  --muted-foreground: 215 20% 65%;
+  --muted: 30 10% 18%;
+  --muted-foreground: 30 10% 55%;
 
-  --accent: 172 66% 40%;
-  --accent-foreground: 0 0% 100%;
+  --accent: 140 20% 45%;
+  --accent-foreground: 40 20% 95%;
 
-  --destructive: 0 62% 50%;
-  --destructive-foreground: 0 0% 100%;
+  --destructive: 10 45% 45%;
+  --destructive-foreground: 40 20% 95%;
 
-  --input: 217 33% 22%;
-  --ring: 199 89% 48%;
+  --input: 30 12% 20%;
+  --ring: 150 25% 55%;
   
-  --chart-1: 199 89% 48%;
-  --chart-2: 172 66% 50%;
-  --chart-3: 262 83% 58%;
-  --chart-4: 43 96% 56%;
-  --chart-5: 339 90% 51%;
+  --chart-1: 150 25% 55%;
+  --chart-2: 140 20% 50%;
+  --chart-3: 30 25% 50%;
+  --chart-4: 45 35% 55%;
+  --chart-5: 10 30% 50%;
 
   --shadow-2xs: 0px 1px 2px 0px rgba(0,0,0,0.3);
   --shadow-xs: 0px 1px 3px 0px rgba(0,0,0,0.4);
@@ -167,7 +179,44 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    /* Subtle paper texture - Shizen (naturalness) */
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-blend-mode: overlay;
+    background-size: 150px;
   }
+
+  .dark body {
+    background-blend-mode: soft-light;
+  }
+}
+
+/* Wabi-Sabi animation tokens - Yūgen (subtle depth) */
+@keyframes gentle-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes breathe {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-gentle-fade {
+  animation: gentle-fade-in 0.6s ease-out forwards;
+}
+
+.animate-breathe {
+  animation: breathe 3s ease-in-out infinite;
 }
 
 @layer utilities {
