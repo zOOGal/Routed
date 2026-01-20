@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
-import { MessageCircle, Sparkles, MapPin, History, Settings, Clock, Wallet } from "lucide-react";
+import { MessageCircle, Sparkles, MapPin, Navigation, History, Settings, Clock, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CitySelector } from "@/components/city-selector";
@@ -15,6 +15,7 @@ import type { RouteRecommendation, AgentResponse } from "@shared/schema";
 
 export default function Home() {
   const [, setLocation] = useLocation();
+  const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   const [userNote, setUserNote] = useState("");
   const [showNote, setShowNote] = useState(false);
@@ -28,7 +29,7 @@ export default function Home() {
   const getRecommendation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest("POST", "/api/agent/recommend", {
-        origin: "Current location",
+        origin: origin.trim() || "Current location",
         destination,
         cityId,
         calmVsFast,
@@ -116,14 +117,31 @@ export default function Home() {
         <div 
           className="p-5 rounded-xl bg-card border border-border/60 shadow-sm mb-6 animate-gentle-fade"
         >
-          {/* Destination input */}
           <div className="space-y-4">
+            {/* Origin input */}
+            <div>
+              <label className="text-sm text-muted-foreground mb-2 block">
+                where are you starting from?
+              </label>
+              <div className="relative">
+                <Navigation className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="current location"
+                  value={origin}
+                  onChange={(e) => setOrigin(e.target.value)}
+                  className="pl-10 py-5 text-base"
+                  data-testid="input-origin"
+                />
+              </div>
+            </div>
+
+            {/* Destination input */}
             <div>
               <label className="text-sm text-muted-foreground mb-2 block">
                 where are you going?
               </label>
               <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
                 <Input
                   placeholder="enter destination..."
                   value={destination}
@@ -143,9 +161,6 @@ export default function Home() {
                   <MessageCircle className="h-4 w-4" />
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                from your current location
-              </p>
             </div>
 
             {/* Optional note */}
