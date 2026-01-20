@@ -110,11 +110,12 @@ Currently supported: NYC, Tokyo, Berlin
 
 ## User Preferences
 
-### Real-time Preferences (progressive disclosure - appear after entering destination)
-- **Calm ↔ Fast**: 0-100 slider (0 = prioritize calm routes, 100 = prioritize speed)
-- **Economy ↔ Comfort**: 0-100 slider (0 = cheapest options, 100 = most comfortable)
-- **City Familiarity Toggle**: "this city is new to me" - simpler routes when enabled
-- **Optional Note**: Context for the AI (e.g., "I have a heavy bag")
+### Real-time Preferences (always visible for practical usability)
+- **Calm ↔ Fast**: 0-100 slider with icons (Leaf/Zap) - 0 = prioritize calm, 100 = prioritize speed
+- **Economy ↔ Comfort**: 0-100 slider with icons (Wallet/Sparkles) - 0 = cheapest, 100 = most comfortable
+- **City Familiarity Toggle**: "I'm new to this city" - simpler routes when enabled
+- **Optional Note**: Hidden behind toggle, context for AI (e.g., "heavy luggage")
+- **Preference Summary**: Live feedback showing current settings ("prefer calm", "budget-friendly")
 
 ### Slider Enforcement
 - Economy ≤ 30: System enforces transit/walking (never rideshare)
