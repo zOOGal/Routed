@@ -1,35 +1,38 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
-import { Navigation, Settings, History, Sparkles } from "lucide-react";
+import { Navigation, Settings, History, Sparkles, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { LocationInput } from "@/components/location-input";
+import { Input } from "@/components/ui/input";
 import { CitySelector } from "@/components/city-selector";
-import { MoodSelector } from "@/components/mood-selector";
+import { PreferenceSliders } from "@/components/preference-sliders";
 import { RouteCard } from "@/components/route-card";
 import { LoadingState } from "@/components/loading-state";
 import { EmptyState } from "@/components/empty-state";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { RouteRecommendation, AgentResponse, TravelMood } from "@shared/schema";
+import type { RouteRecommendation, AgentResponse } from "@shared/schema";
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   const [cityId, setCityId] = useState("nyc");
-  const [mood, setMood] = useState<TravelMood>("normal");
+  const [calmVsFast, setCalmVsFast] = useState(30); // Default slightly calm
+  const [economyVsComfort, setEconomyVsComfort] = useState(50); // Default balanced
+  const [unfamiliarWithCity, setUnfamiliarWithCity] = useState(false);
   const [recommendation, setRecommendation] = useState<RouteRecommendation | null>(null);
   const [tripId, setTripId] = useState<string | null>(null);
 
   const getRecommendation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest("POST", "/api/agent/recommend", {
-        origin,
+        origin: "Current location",
         destination,
         cityId,
-        mood,
+        calmVsFast,
+        economyVsComfort,
+        unfamiliarWithCity,
       });
       return await response.json() as AgentResponse;
     },
@@ -51,7 +54,7 @@ export default function Home() {
   });
 
   const handleSearch = () => {
-    if (origin.trim() && destination.trim()) {
+    if (destination.trim()) {
       setRecommendation(null);
       getRecommendation.mutate();
     }
@@ -103,36 +106,49 @@ export default function Home() {
         </div>
 
         <Card className="mb-6">
-          <CardContent className="p-4 space-y-4">
-            <MoodSelector selectedMood={mood} onMoodChange={setMood} />
-            <div className="border-t pt-4 space-y-4">
-              <LocationInput
-                label="From"
-                placeholder="Enter starting point"
-                value={origin}
-                onChange={setOrigin}
-                icon="origin"
-                testId="input-origin"
-              />
-              <LocationInput
-                label="To"
-                placeholder="Where are you going?"
-                value={destination}
-                onChange={setDestination}
-                icon="destination"
-                testId="input-destination"
+          <CardContent className="p-5 space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-xl font-semibold">Where are you going?</h2>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Enter destination"
+                  value={destination}
+                  onChange={(e) => setDestination(e.target.value)}
+                  className="pl-10"
+                  data-testid="input-destination"
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                From your current location
+              </p>
+            </div>
+
+            <div className="border-t pt-5">
+              <PreferenceSliders
+                calmVsFast={calmVsFast}
+                economyVsComfort={economyVsComfort}
+                unfamiliarWithCity={unfamiliarWithCity}
+                onCalmVsFastChange={setCalmVsFast}
+                onEconomyVsComfortChange={setEconomyVsComfort}
+                onUnfamiliarChange={setUnfamiliarWithCity}
               />
             </div>
+
             <Button 
               className="w-full gap-2" 
               size="lg"
               onClick={handleSearch}
-              disabled={!origin.trim() || !destination.trim() || getRecommendation.isPending}
+              disabled={!destination.trim() || getRecommendation.isPending}
               data-testid="button-find-route"
             >
               <Sparkles className="h-4 w-4" />
               Find Best Route
             </Button>
+
+            <p className="text-xs text-center text-muted-foreground">
+              Guided by your mobility agent
+            </p>
           </CardContent>
         </Card>
 

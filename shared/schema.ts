@@ -166,6 +166,10 @@ export interface AgentRequest {
   cityId: string;
   userId?: string;
   mood?: TravelMood;
+  // New slider-based preferences
+  calmVsFast?: number; // 0 = calm, 100 = fast
+  economyVsComfort?: number; // 0 = economy, 100 = comfort
+  unfamiliarWithCity?: boolean;
 }
 
 export interface AgentResponse {

@@ -14,7 +14,7 @@ export async function registerRoutes(
   
   app.post("/api/agent/recommend", async (req, res) => {
     try {
-      const { origin, destination, cityId, departureTime } = req.body;
+      const { origin, destination, cityId, departureTime, calmVsFast, economyVsComfort, unfamiliarWithCity, mood } = req.body;
       
       if (!origin || !destination || !cityId) {
         return res.status(400).json({ error: "Missing required fields: origin, destination, cityId" });
@@ -28,6 +28,10 @@ export async function registerRoutes(
         cityId,
         departureTime,
         userId,
+        mood,
+        calmVsFast,
+        economyVsComfort,
+        unfamiliarWithCity,
       };
 
       const recommendation = await getRecommendation(request);

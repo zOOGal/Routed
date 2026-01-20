@@ -84,6 +84,12 @@ Currently supported: NYC, Tokyo, Berlin
 
 ## User Preferences
 
+### Real-time Preferences (set before each search)
+- **Calm ↔ Fast**: 0-100 slider (0 = prioritize calm routes, 100 = prioritize speed)
+- **Economy ↔ Comfort**: 0-100 slider (0 = cheapest options, 100 = most comfortable)
+- **City Familiarity Toggle**: "I'm unfamiliar with this city" - simpler routes when enabled
+
+### Saved Preferences (in Preferences page)
 - **Walking Tolerance**: 1-5 scale
 - **Transfer Tolerance**: 1-5 scale
 - **Stress vs Speed Bias**: 0-1 (higher = less stress)

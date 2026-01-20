@@ -17,27 +17,25 @@ const ai = new GoogleGenAI({
   },
 });
 
-const SYSTEM_PROMPT = `You are Movi, a calm and confident AI mobility agent. Your job is to decide the best way for a user to travel in a city, optimizing for low stress and cognitive load rather than just speed.
+const SYSTEM_PROMPT = `You are Movi, a calm and confident AI mobility agent. Your job is to decide the best way for a user to travel in a city.
 
 Core Principles:
 1. OPINIONATED: Always recommend ONE best option, not multiple choices
-2. STRESS-FIRST: Prioritize reducing mental load over saving time
-3. MOOD-AWARE: Adapt recommendations based on user's current emotional state
-4. CONTEXT-AWARE: Consider weather, traffic, time of day, and real-world conditions
-5. EXPLAINABLE: Always explain your reasoning in a friendly, conversational way
+2. USER-FIRST: The user's slider preferences are your TOP PRIORITY
+3. CONTEXT-AWARE: Consider weather, traffic, time of day as secondary factors
+4. EXPLAINABLE: Always explain your reasoning in a friendly, conversational way
 
-When making recommendations:
-- Consider walking friendliness of the city
-- Avoid complex transit stations when possible, especially for unfamiliar users
-- Factor in night-time reliability of transit
-- Consider cost sensitivity
-- Account for user's walking and transfer tolerance
-- CRITICAL: Adapt to user's current mood:
-  - "relaxed": Prioritize scenic, calm routes even if slower
-  - "normal": Balance comfort and efficiency
-  - "hurry": Speed is top priority, tolerate more stress
-  - "tired": Minimize walking, prefer sitting (taxis/rideshare ok)
-  - "adventurous": Suggest interesting routes with local flavor
+CRITICAL SLIDER RULES (YOU MUST FOLLOW):
+- Calm vs Fast slider (0-100): 0=calm routes, 100=speed priority
+- Economy vs Comfort slider (0-100): 0=cheapest options, 100=premium comfort
+
+MANDATORY CONSTRAINTS:
+- If Economy slider is LOW (0-30): You MUST recommend transit or walking. NEVER recommend rideshare.
+- If Economy slider is HIGH (70-100): Rideshare and premium options are allowed.
+- If Calm slider is LOW (0-30): Prioritize peaceful, scenic, low-stress routes.
+- If Calm slider is HIGH (70-100): Prioritize speed even if more stressful.
+
+Weather and conditions are SECONDARY - they can influence route choice but CANNOT override budget constraints.
 
 You must respond with a valid JSON object matching this exact structure:
 {
@@ -143,6 +141,14 @@ function getSimulatedWeather(cityId: string): { condition: string; advice: strin
   return { condition, advice };
 }
 
+function getPreferenceDescription(value: number, lowLabel: string, highLabel: string): string {
+  if (value <= 20) return `Strongly prefers ${lowLabel}`;
+  if (value <= 40) return `Leans towards ${lowLabel}`;
+  if (value <= 60) return "Balanced";
+  if (value <= 80) return `Leans towards ${highLabel}`;
+  return `Strongly prefers ${highLabel}`;
+}
+
 function buildPrompt(
   request: AgentRequest,
   cityProfile: CityProfile,
@@ -155,7 +161,14 @@ function buildPrompt(
   })();
 
   const weather = getSimulatedWeather(request.cityId);
-  const moodDescription = getMoodDescription(request.mood);
+  
+  // Use slider values if provided, otherwise fall back to user context
+  const calmVsFast = request.calmVsFast ?? 50;
+  const economyVsComfort = request.economyVsComfort ?? 50;
+  const isUnfamiliar = request.unfamiliarWithCity ?? (userContext.cityFamiliarity < 0.3);
+
+  const calmFastDesc = getPreferenceDescription(calmVsFast, "calm routes", "faster routes");
+  const economyComfortDesc = getPreferenceDescription(economyVsComfort, "economy options", "comfortable options");
 
   return `
 User wants to travel in ${cityProfile.name}:
@@ -163,8 +176,14 @@ User wants to travel in ${cityProfile.name}:
 - To: ${request.destination}
 ${request.departureTime ? `- Departure: ${request.departureTime}` : "- Departure: Now"}
 
-CURRENT MOOD (IMPORTANT):
-${moodDescription}
+USER PREFERENCES (IMPORTANT - These are set by the user RIGHT NOW):
+- Calm vs Fast: ${calmVsFast}/100 - ${calmFastDesc}
+  ${calmVsFast <= 30 ? "→ PRIORITIZE calm, low-stress routes even if they take longer" : ""}
+  ${calmVsFast >= 70 ? "→ PRIORITIZE speed, user is in a hurry" : ""}
+- Economy vs Comfort: ${economyVsComfort}/100 - ${economyComfortDesc}
+  ${economyVsComfort <= 30 ? "→ PRIORITIZE cheapest options (public transit, walking)" : ""}
+  ${economyVsComfort >= 70 ? "→ PRIORITIZE comfort (rideshare, premium options OK)" : ""}
+- City Familiarity: ${isUnfamiliar ? "UNFAMILIAR with this city - avoid complex routes, prefer simple navigation" : "Familiar with the city"}
 
 REAL-TIME CONDITIONS:
 - Weather: ${weather.condition} - ${weather.advice}
@@ -178,16 +197,15 @@ City Context:
 - Available transit: ${cityProfile.transitTypes.join(", ")}
 - Rideshare apps: ${cityProfile.rideshareApps.join(", ")}
 
-User Preferences:
-- Walking tolerance: ${userContext.walkingTolerance}/5 (${userContext.walkingTolerance >= 4 ? "enjoys walking" : userContext.walkingTolerance <= 2 ? "prefers minimal walking" : "moderate"})
-- Transfer tolerance: ${userContext.transferTolerance}/5 (${userContext.transferTolerance >= 4 ? "comfortable with transfers" : userContext.transferTolerance <= 2 ? "avoids transfers" : "moderate"})
-- Stress vs Speed: ${(userContext.stressVsSpeedBias * 100).toFixed(0)}% stress-focused (${userContext.stressVsSpeedBias >= 0.7 ? "strongly prefers calm journeys" : userContext.stressVsSpeedBias <= 0.3 ? "prioritizes speed" : "balanced"})
-- Cost sensitivity: ${userContext.costSensitivity}/5 (${userContext.costSensitivity >= 4 ? "budget-conscious" : userContext.costSensitivity <= 2 ? "cost not a concern" : "moderate"})
-- City familiarity: ${(userContext.cityFamiliarity * 100).toFixed(0)}% (${userContext.cityFamiliarity >= 0.7 ? "knows the city well" : userContext.cityFamiliarity <= 0.3 ? "unfamiliar with the city" : "somewhat familiar"})
+Based on the user's CALM vs FAST and ECONOMY vs COMFORT preferences, recommend the SINGLE best way to make this journey.
 
-Based on all this context - especially the user's CURRENT MOOD and WEATHER - recommend the SINGLE best way to make this journey. Your recommendation should directly reflect their mood state.
+CRITICAL RULES:
+1. USER PREFERENCES ARE THE TOP PRIORITY - they override weather and other conditions
+2. If Economy slider is LOW (0-30), you MUST recommend the cheapest option (public transit, walking) - even in bad weather
+3. If Comfort slider is HIGH (70-100), then you can suggest premium options like rideshare
+4. Weather and conditions are secondary factors - they can influence the route but NOT override budget constraints
 
-In your reasoning, mention how the current mood and conditions influenced your choice.
+In your reasoning, explain how the user's preferences and current conditions influenced your choice.
 
 Respond ONLY with a valid JSON object matching the specified structure.`;
 }
@@ -251,10 +269,17 @@ export async function getRecommendation(
     });
 
     const content = response.text || "";
-    const recommendation = parseAgentResponse(content);
+    let recommendation = parseAgentResponse(content);
 
     if (!recommendation) {
       return generateFallbackRecommendation(request, cityProfile, userContext);
+    }
+
+    // ENFORCEMENT: Override rideshare if economy preference is low
+    const economyVsComfort = request.economyVsComfort ?? 50;
+    if (economyVsComfort <= 30 && recommendation.mode === "rideshare") {
+      console.log(`Enforcing economy constraint: overriding rideshare with transit (economy=${economyVsComfort})`);
+      recommendation = generateBudgetFriendlyRecommendation(request, cityProfile, recommendation);
     }
 
     return recommendation;
@@ -264,12 +289,54 @@ export async function getRecommendation(
   }
 }
 
+function generateBudgetFriendlyRecommendation(
+  request: AgentRequest,
+  cityProfile: CityProfile,
+  originalRecommendation: RouteRecommendation
+): RouteRecommendation {
+  // Convert rideshare recommendation to transit while preserving the journey structure
+  const transitSteps: RouteStep[] = [
+    {
+      type: "walk",
+      instruction: `Walk to the nearest ${cityProfile.transitTypes[0]} station`,
+      duration: 5,
+      distance: 400,
+    },
+    {
+      type: "transit",
+      instruction: `Take the ${cityProfile.transitTypes[0]} towards ${request.destination}`,
+      duration: Math.max(15, originalRecommendation.estimatedDuration - 10),
+      line: cityProfile.transitTypes[0],
+      stopsCount: 6,
+    },
+    {
+      type: "walk",
+      instruction: `Walk to ${request.destination}`,
+      duration: 5,
+      distance: 300,
+    },
+  ];
+
+  return {
+    mode: "transit",
+    summary: `Take ${cityProfile.transitTypes[0]} to reach ${request.destination} - budget-friendly option`,
+    estimatedDuration: transitSteps.reduce((acc, s) => acc + s.duration, 0),
+    estimatedCost: 3, // Typical transit fare
+    stressScore: 0.35,
+    steps: transitSteps,
+    reasoning: `Since you've set your budget preference to economy, I'm recommending public transit instead of rideshare. This is the most cost-effective way to reach your destination while keeping stress low.`,
+    confidence: 0.85,
+  };
+}
+
 function generateFallbackRecommendation(
   request: AgentRequest,
   cityProfile: CityProfile,
   userContext: UserContext
 ): RouteRecommendation {
-  const preferTransit = cityProfile.transitVsTaxiBias >= 0.5;
+  // Respect economy preference in fallback too
+  const economyVsComfort = request.economyVsComfort ?? 50;
+  const preferTransit = economyVsComfort <= 50 || cityProfile.transitVsTaxiBias >= 0.5;
   const mode = preferTransit ? "transit" : "rideshare";
 
   const steps: RouteStep[] = preferTransit
