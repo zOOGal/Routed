@@ -1,6 +1,7 @@
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Leaf, Zap, Wallet, Sparkles } from "lucide-react";
 
 interface PreferenceSlidersProps {
   calmVsFast: number;
@@ -20,12 +21,18 @@ export function PreferenceSliders({
   onUnfamiliarChange,
 }: PreferenceSlidersProps) {
   return (
-    <div className="space-y-7">
-      {/* Calm vs Fast - organic spacing */}
-      <div className="space-y-3">
+    <div className="space-y-5">
+      {/* Calm vs Fast */}
+      <div className="space-y-2">
         <div className="flex justify-between items-center text-sm">
-          <span className="text-muted-foreground/80">calm</span>
-          <span className="text-muted-foreground/80">swift</span>
+          <span className="flex items-center gap-1.5 text-muted-foreground">
+            <Leaf className="h-3.5 w-3.5" />
+            calm
+          </span>
+          <span className="flex items-center gap-1.5 text-muted-foreground">
+            fast
+            <Zap className="h-3.5 w-3.5" />
+          </span>
         </div>
         <Slider
           value={[calmVsFast]}
@@ -37,11 +44,17 @@ export function PreferenceSliders({
         />
       </div>
 
-      {/* Economy vs Comfort - asymmetric positioning */}
-      <div className="space-y-3" style={{ marginLeft: '2px' }}>
+      {/* Economy vs Comfort */}
+      <div className="space-y-2">
         <div className="flex justify-between items-center text-sm">
-          <span className="text-muted-foreground/80">mindful</span>
-          <span className="text-muted-foreground/80">comfort</span>
+          <span className="flex items-center gap-1.5 text-muted-foreground">
+            <Wallet className="h-3.5 w-3.5" />
+            budget
+          </span>
+          <span className="flex items-center gap-1.5 text-muted-foreground">
+            comfort
+            <Sparkles className="h-3.5 w-3.5" />
+          </span>
         </div>
         <Slider
           value={[economyVsComfort]}
@@ -53,20 +66,19 @@ export function PreferenceSliders({
         />
       </div>
 
-      {/* City familiarity toggle - humble, optional feel */}
-      <div className="flex items-center gap-3 pt-2 opacity-80">
+      {/* City familiarity */}
+      <div className="flex items-center gap-3 pt-1">
         <Checkbox
           id="unfamiliar-toggle"
           checked={unfamiliarWithCity}
           onCheckedChange={(checked) => onUnfamiliarChange(checked === true)}
-          className="border-border/60"
           data-testid="checkbox-unfamiliar"
         />
         <Label 
           htmlFor="unfamiliar-toggle" 
-          className="text-sm text-muted-foreground/70 cursor-pointer font-normal"
+          className="text-sm text-muted-foreground cursor-pointer"
         >
-          this city is new to me
+          I'm new to this city (simpler routes)
         </Label>
       </div>
     </div>

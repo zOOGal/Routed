@@ -25,30 +25,27 @@ export function CitySelector({ selectedCity, onCityChange }: CitySelectorProps) 
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button 
-          variant="ghost" 
-          className="gap-2 text-muted-foreground/70 hover:text-foreground font-normal h-auto py-1.5 px-2 -ml-2"
+          variant="outline" 
+          className="gap-2"
           data-testid="button-city-selector"
         >
-          <MapPin className="h-3.5 w-3.5" />
-          <span className="text-sm">{city.name}</span>
-          <ChevronDown className="h-3 w-3 opacity-50" />
+          <MapPin className="h-4 w-4 text-primary" />
+          <span>{city.name}</span>
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent 
-        align="start" 
-        className="w-48 rounded-xl border-border/50"
-      >
+      <DropdownMenuContent align="start" className="w-52">
         {CITIES.map((c) => (
           <DropdownMenuItem
             key={c.id}
             onClick={() => onCityChange(c.id)}
-            className="gap-3 py-2.5 rounded-lg cursor-pointer"
+            className="gap-3 py-2.5 cursor-pointer"
             data-testid={`menu-item-city-${c.id}`}
           >
-            <MapPin className="h-3.5 w-3.5 text-muted-foreground/50" />
+            <MapPin className="h-4 w-4 text-muted-foreground" />
             <div className="flex flex-col">
-              <span className="text-sm">{c.name}</span>
-              <span className="text-xs text-muted-foreground/50">{c.country}</span>
+              <span className="font-medium">{c.name}</span>
+              <span className="text-xs text-muted-foreground">{c.country}</span>
             </div>
           </DropdownMenuItem>
         ))}

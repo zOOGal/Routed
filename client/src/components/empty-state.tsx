@@ -1,3 +1,5 @@
+import { MapPin, Route, AlertCircle } from "lucide-react";
+
 interface EmptyStateProps {
   type: "search" | "trips" | "error";
   title?: string;
@@ -6,30 +8,33 @@ interface EmptyStateProps {
 
 const configs = {
   search: {
-    title: "enter a destination",
-    description: "share where you'd like to go, and I'll find a peaceful way to get you there.",
+    icon: MapPin,
+    title: "ready to help",
+    description: "enter your destination above and I'll find the best route for you.",
   },
   trips: {
-    title: "no journeys yet",
-    description: "your completed journeys will appear here, ready for reflection.",
+    icon: Route,
+    title: "no trips yet",
+    description: "your completed journeys will appear here.",
   },
   error: {
-    title: "a moment of pause",
-    description: "I couldn't find a path this time. perhaps try a different destination?",
+    icon: AlertCircle,
+    title: "something went wrong",
+    description: "I couldn't find a route. please try again or try a different destination.",
   },
 };
 
 export function EmptyState({ type, title, description }: EmptyStateProps) {
   const config = configs[type];
+  const Icon = config.icon;
 
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-      {/* Subtle organic shape - Shizen */}
-      <div 
-        className="w-12 h-12 rounded-full border border-border/40 mb-8 opacity-40"
-        style={{ borderRadius: '45% 55% 50% 50%' }}
-      />
-      <p className="text-sm text-muted-foreground/60 max-w-xs leading-relaxed">
+    <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+      <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-4">
+        <Icon className="h-6 w-6 text-muted-foreground" />
+      </div>
+      <h3 className="text-base font-medium mb-1">{title || config.title}</h3>
+      <p className="text-sm text-muted-foreground max-w-xs">
         {description || config.description}
       </p>
     </div>
