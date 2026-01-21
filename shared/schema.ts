@@ -127,6 +127,7 @@ export interface RouteRecommendation {
   reasoning: string;
   confidence: number; // 0-1
   alternatives?: { mode: string; reason: string }[];
+  googleMapsLink?: string; // Full trip link for navigation
 }
 
 export interface RouteStep {
@@ -138,6 +139,14 @@ export interface RouteStep {
   direction?: string;
   stopsCount?: number;
   deepLink?: string; // for rideshare apps
+  navigationDeepLink?: string; // Google Maps navigation link
+  transitDetails?: {
+    departureStop: string;
+    arrivalStop: string;
+    departureTime?: string;
+    arrivalTime?: string;
+    vehicleType?: string;
+  };
 }
 
 // Travel mood options
@@ -177,4 +186,109 @@ export interface AgentRequest {
 export interface AgentResponse {
   recommendation: RouteRecommendation;
   tripId: string;
+}
+
+// ============================================
+// TRAVEL PACKAGES & MEMBERSHIPS
+// ============================================
+
+// Travel packages (e.g., "Berlin 7-day")
+export const packages = pgTable("packages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  cityId: varchar("city_id").notNull(),
+  name: text("name").notNull(),
+  durationDays: integer("duration_days").notNull(),
+  priceCents: integer("price_cents").notNull(),
+  description: text("description"),
+  includedProviders: jsonb("included_providers").$type<string[]>().notNull(),
+  benefitRules: jsonb("benefit_rules").$type<BenefitRule[]>().notNull(),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+// User's purchased/activated packages
+export const userPackages = pgTable("user_packages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  packageId: varchar("package_id").notNull().references(() => packages.id),
+  startAt: timestamp("start_at").notNull(),
+  endAt: timestamp("end_at").notNull(),
+  status: text("status").default("active"), // 'active', 'expired', 'cancelled'
+  entitlements: jsonb("entitlements").$type<Entitlement[]>().notNull(),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+// Providers (transit, ridehail, bike services per city)
+export const providers = pgTable("providers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  cityId: varchar("city_id").notNull(),
+  type: text("type").notNull(), // 'transit', 'ridehail', 'bike'
+  name: text("name").notNull(),
+  deepLinkTemplate: text("deep_link_template"),
+  logoEmoji: text("logo_emoji"), // Simple emoji for now
+  baseFareCents: integer("base_fare_cents"),
+  perKmCents: integer("per_km_cents"),
+  perMinCents: integer("per_min_cents"),
+});
+
+// Package insert schema
+export const insertPackageSchema = createInsertSchema(packages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUserPackageSchema = createInsertSchema(userPackages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertProviderSchema = createInsertSchema(providers).omit({
+  id: true,
+});
+
+// Types for packages
+export type Package = typeof packages.$inferSelect;
+export type InsertPackage = z.infer<typeof insertPackageSchema>;
+export type UserPackage = typeof userPackages.$inferSelect;
+export type InsertUserPackage = z.infer<typeof insertUserPackageSchema>;
+export type Provider = typeof providers.$inferSelect;
+export type InsertProvider = z.infer<typeof insertProviderSchema>;
+
+// Benefit rule types
+export interface BenefitRule {
+  providerType: 'transit' | 'ridehail' | 'bike';
+  providerId?: string; // Optional - applies to all of type if not specified
+  benefitType: 'free_pass' | 'discount_percent' | 'free_minutes' | 'free_unlocks';
+  value: number; // percentage for discount, minutes for free_minutes, count for unlocks
+  maxUsesPerDay?: number;
+}
+
+// Entitlement (activated benefit from a package)
+export interface Entitlement {
+  providerId: string;
+  providerName: string;
+  providerType: 'transit' | 'ridehail' | 'bike';
+  benefitType: 'free_pass' | 'discount_percent' | 'free_minutes' | 'free_unlocks';
+  value: number;
+  remainingUses?: number;
+  activatedAt: string;
+}
+
+// Provider adapter interface (for implementing stubs)
+export interface ProviderAdapter {
+  id: string;
+  name: string;
+  type: 'transit' | 'ridehail' | 'bike';
+  cityId: string;
+  logoEmoji: string;
+
+  // Estimate cost for a route segment
+  estimateCost(durationMin: number, distanceMeters: number, entitlements: Entitlement[]): {
+    baseCostCents: number;
+    adjustedCostCents: number;
+    benefitApplied: string | null;
+    isFree: boolean;
+  };
+
+  // Generate deep link to provider app
+  getDeepLink(origin: string, destination: string): string;
 }

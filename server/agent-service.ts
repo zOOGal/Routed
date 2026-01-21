@@ -1,9 +1,17 @@
 import { GoogleGenAI } from "@google/genai";
 import { getCityProfile, calculateCognitiveLoad } from "./city-intelligence";
 import { storage } from "./storage";
-import type { 
-  AgentRequest, 
-  RouteRecommendation, 
+import {
+  getMultipleRoutes,
+  mapToRouteSteps,
+  generateGoogleMapsDeepLink,
+  nomadiModeToGoogleMode,
+  type GoogleMapsRoute,
+  type TravelMode
+} from "./google-maps-service";
+import type {
+  AgentRequest,
+  RouteRecommendation,
   RouteStep,
   CityProfile,
   TravelMood
@@ -17,12 +25,12 @@ const ai = new GoogleGenAI({
   },
 });
 
-const SYSTEM_PROMPT = `You are Movi, a calm and confident AI mobility agent. Your job is to decide the best way for a user to travel in a city.
+const SYSTEM_PROMPT = `You are Movi, a calm and confident AI mobility agent. Your job is to analyze REAL route data from Google Maps and recommend the best option for a user.
 
 Core Principles:
-1. OPINIONATED: Always recommend ONE best option, not multiple choices
+1. OPINIONATED: Select ONE best route from the real options provided
 2. USER-FIRST: The user's slider preferences are your TOP PRIORITY
-3. CONTEXT-AWARE: Consider weather, traffic, time of day as secondary factors
+3. DATA-DRIVEN: Use the real route data (durations, distances, transit details) provided to you
 4. EXPLAINABLE: Always explain your reasoning in a friendly, conversational way
 
 CRITICAL SLIDER RULES (YOU MUST FOLLOW):
@@ -30,34 +38,26 @@ CRITICAL SLIDER RULES (YOU MUST FOLLOW):
 - Economy vs Comfort slider (0-100): 0=cheapest options, 100=premium comfort
 
 MANDATORY CONSTRAINTS:
-- If Economy slider is LOW (0-30): You MUST recommend transit or walking. NEVER recommend rideshare.
+- If Economy slider is LOW (0-30): You MUST recommend transit or walking. NEVER recommend driving/rideshare.
 - If Economy slider is HIGH (70-100): Rideshare and premium options are allowed.
 - If Calm slider is LOW (0-30): Prioritize peaceful, scenic, low-stress routes.
 - If Calm slider is HIGH (70-100): Prioritize speed even if more stressful.
 
 Weather and conditions are SECONDARY - they can influence route choice but CANNOT override budget constraints.
 
+You will be provided with REAL route data from Google Maps. Your job is to:
+1. Analyze the actual routes available
+2. Select the best one based on user preferences
+3. Assign a stress score based on complexity, transfers, and walking distance
+4. Explain your choice
+
 You must respond with a valid JSON object matching this exact structure:
 {
-  "mode": "transit" | "rideshare" | "walk" | "bike" | "mixed",
+  "selectedMode": "transit" | "driving" | "walking" (which route to use from the provided options),
   "summary": "A brief 1-sentence summary of the journey",
-  "estimatedDuration": number (in minutes),
-  "estimatedCost": number | null (in local currency, null if free),
   "stressScore": number (0-1, where 0 is very relaxing and 1 is very stressful),
   "reasoning": "A friendly 2-3 sentence explanation of why this is the best choice",
-  "confidence": number (0-1),
-  "steps": [
-    {
-      "type": "walk" | "transit" | "rideshare" | "wait" | "transfer",
-      "instruction": "Clear instruction for this step",
-      "duration": number (in minutes),
-      "distance": number (in meters, optional),
-      "line": "transit line name (optional)",
-      "direction": "direction/destination of transit (optional)",
-      "stopsCount": number (optional),
-      "deepLink": "app deep link for rideshare (optional)"
-    }
-  ]
+  "confidence": number (0-1)
 }
 
 Be warm, supportive, and make the user feel confident about their journey.`;
@@ -149,10 +149,16 @@ function getPreferenceDescription(value: number, lowLabel: string, highLabel: st
   return `Strongly prefers ${highLabel}`;
 }
 
+interface RouteOption {
+  mode: TravelMode;
+  route: GoogleMapsRoute;
+}
+
 function buildPrompt(
   request: AgentRequest,
   cityProfile: CityProfile,
-  userContext: UserContext
+  userContext: UserContext,
+  routeOptions: RouteOption[]
 ): string {
   const isNightTime = (() => {
     const now = new Date();
@@ -161,7 +167,7 @@ function buildPrompt(
   })();
 
   const weather = getSimulatedWeather(request.cityId);
-  
+
   // Use slider values if provided, otherwise fall back to user context
   const calmVsFast = request.calmVsFast ?? 50;
   const economyVsComfort = request.economyVsComfort ?? 50;
@@ -169,6 +175,49 @@ function buildPrompt(
 
   const calmFastDesc = getPreferenceDescription(calmVsFast, "calm routes", "faster routes");
   const economyComfortDesc = getPreferenceDescription(economyVsComfort, "economy options", "comfortable options");
+
+  // Format real route data for AI analysis
+  const routeDataText = routeOptions.map(({ mode, route }) => {
+    const durationMin = Math.ceil(route.duration.value / 60);
+    const distanceKm = (route.distance.value / 1000).toFixed(1);
+    const stepsCount = route.steps.length;
+    const transitSteps = route.steps.filter(s => s.travelMode === "TRANSIT");
+    const walkingSteps = route.steps.filter(s => s.travelMode === "WALKING");
+    const totalWalkingMin = walkingSteps.reduce((acc, s) => acc + Math.ceil(s.duration.value / 60), 0);
+
+    let details = `  - Mode: ${mode.toUpperCase()}\n`;
+    details += `    Duration: ${durationMin} minutes\n`;
+    details += `    Distance: ${distanceKm} km\n`;
+
+    if (mode === "transit") {
+      details += `    Transit segments: ${transitSteps.length}\n`;
+      details += `    Walking time: ${totalWalkingMin} minutes\n`;
+      if (route.fare) {
+        details += `    Fare: ${route.fare.text}\n`;
+      }
+      if (route.departureTime && route.arrivalTime) {
+        details += `    Departs: ${route.departureTime}, Arrives: ${route.arrivalTime}\n`;
+      }
+      // Add transit line details
+      transitSteps.forEach((step, i) => {
+        if (step.transitDetails) {
+          const td = step.transitDetails;
+          details += `    Line ${i + 1}: ${td.line.shortName || td.line.name} (${td.line.vehicle.type}) - ${td.numStops} stops\n`;
+          details += `      From: ${td.departureStop.name} → To: ${td.arrivalStop.name}\n`;
+        }
+      });
+    }
+
+    if (mode === "driving") {
+      details += `    Estimated cost: ~$15-25 (rideshare)\n`;
+    }
+
+    if (mode === "walking") {
+      details += `    Free, good exercise!\n`;
+    }
+
+    return details;
+  }).join("\n");
 
   return `
 User wants to travel in ${cityProfile.name}:
@@ -192,58 +241,70 @@ ${isNightTime ? `- Night reliability in ${cityProfile.name}: ${(cityProfile.nigh
 
 City Context:
 - Walking friendliness: ${(cityProfile.walkingFriendliness * 100).toFixed(0)}%
-- Transit vs taxi preference: ${(cityProfile.transitVsTaxiBias * 100).toFixed(0)}% transit-leaning
 - Complex stations to avoid: ${cityProfile.complexStations.join(", ")}
-- Available transit: ${cityProfile.transitTypes.join(", ")}
-- Rideshare apps: ${cityProfile.rideshareApps.join(", ")}
 
-Based on the user's CALM vs FAST and ECONOMY vs COMFORT preferences, recommend the SINGLE best way to make this journey.
+=== REAL ROUTE OPTIONS FROM GOOGLE MAPS ===
+${routeDataText}
+===========================================
+
+Based on the user's CALM vs FAST and ECONOMY vs COMFORT preferences, select the BEST route from the options above.
 
 CRITICAL RULES:
 1. USER PREFERENCES ARE THE TOP PRIORITY - they override weather and other conditions
-2. If Economy slider is LOW (0-30), you MUST recommend the cheapest option (public transit, walking) - even in bad weather
-3. If Comfort slider is HIGH (70-100), then you can suggest premium options like rideshare
+2. If Economy slider is LOW (0-30), you MUST recommend transit or walking - even in bad weather
+3. If Comfort slider is HIGH (70-100), then you can suggest driving/rideshare
 4. Weather and conditions are secondary factors - they can influence the route but NOT override budget constraints
+5. USE THE REAL DATA - don't make up durations or distances, use what's provided
 
-In your reasoning, explain how the user's preferences and current conditions influenced your choice.
+In your reasoning, explain how the user's preferences and the actual route data influenced your choice.
 
 Respond ONLY with a valid JSON object matching the specified structure.`;
 }
 
-function parseAgentResponse(content: string): RouteRecommendation | null {
+interface AIRouteSelection {
+  selectedMode: TravelMode;
+  summary: string;
+  stressScore: number;
+  reasoning: string;
+  confidence: number;
+}
+
+function parseAIRouteSelection(content: string): AIRouteSelection | null {
   try {
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return null;
 
     const parsed = JSON.parse(jsonMatch[0]);
 
-    if (!parsed.mode || !parsed.summary || !parsed.steps) {
+    if (!parsed.selectedMode || !parsed.summary) {
       return null;
     }
 
     return {
-      mode: parsed.mode,
+      selectedMode: parsed.selectedMode,
       summary: parsed.summary,
-      estimatedDuration: parsed.estimatedDuration || 30,
-      estimatedCost: parsed.estimatedCost,
       stressScore: Math.min(1, Math.max(0, parsed.stressScore || 0.5)),
-      steps: parsed.steps.map((step: any) => ({
-        type: step.type || "walk",
-        instruction: step.instruction || "",
-        duration: step.duration || 5,
-        distance: step.distance,
-        line: step.line,
-        direction: step.direction,
-        stopsCount: step.stopsCount,
-        deepLink: step.deepLink,
-      })),
       reasoning: parsed.reasoning || "I've selected what I believe is the best option for you.",
       confidence: Math.min(1, Math.max(0, parsed.confidence || 0.8)),
-      alternatives: parsed.alternatives,
     };
   } catch (error) {
-    console.error("Failed to parse agent response:", error);
+    console.error("Failed to parse AI route selection:", error);
     return null;
+  }
+}
+
+function googleModeToNomadiMode(mode: TravelMode): RouteRecommendation["mode"] {
+  switch (mode) {
+    case "transit":
+      return "transit";
+    case "driving":
+      return "rideshare";
+    case "walking":
+      return "walk";
+    case "bicycling":
+      return "bike";
+    default:
+      return "transit";
   }
 }
 
@@ -256,37 +317,164 @@ export async function getRecommendation(
   }
 
   const userContext = await getUserContext(request.userId, request.cityId);
-  const prompt = buildPrompt(request, cityProfile, userContext);
 
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [
-        { role: "user", parts: [{ text: SYSTEM_PROMPT }] },
-        { role: "model", parts: [{ text: "I understand. I am Movi, a calm and confident AI mobility agent. I will provide stress-optimized, opinionated travel recommendations with clear JSON output." }] },
-        { role: "user", parts: [{ text: prompt }] },
-      ],
-    });
+  // Fetch real routes from Google Maps
+  const departureTime = request.departureTime ? new Date(request.departureTime) : undefined;
+  const routeOptions = await getMultipleRoutes(request.origin, request.destination, departureTime);
 
-    const content = response.text || "";
-    let recommendation = parseAgentResponse(content);
+  // If we got real routes, use AI to select the best one
+  if (routeOptions.length > 0) {
+    const prompt = buildPrompt(request, cityProfile, userContext, routeOptions);
 
-    if (!recommendation) {
-      return generateFallbackRecommendation(request, cityProfile, userContext);
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [
+          { role: "user", parts: [{ text: SYSTEM_PROMPT }] },
+          { role: "model", parts: [{ text: "I understand. I am Movi, a calm and confident AI mobility agent. I will analyze real route data and select the best option based on user preferences." }] },
+          { role: "user", parts: [{ text: prompt }] },
+        ],
+      });
+
+      const content = response.text || "";
+      const aiSelection = parseAIRouteSelection(content);
+
+      if (aiSelection) {
+        // Find the selected route from the options
+        const selectedOption = routeOptions.find(r => r.mode === aiSelection.selectedMode);
+        if (selectedOption) {
+          // Build recommendation from real route data + AI analysis
+          return buildRecommendationFromGoogleRoute(
+            request,
+            selectedOption.mode,
+            selectedOption.route,
+            aiSelection
+          );
+        }
+      }
+
+      // If AI selection failed, use heuristic to pick best route
+      console.warn("AI route selection failed, using heuristic fallback");
+      return buildRecommendationFromHeuristic(request, routeOptions, cityProfile);
+    } catch (error) {
+      console.error("AI reasoning error:", error);
+      return buildRecommendationFromHeuristic(request, routeOptions, cityProfile);
     }
-
-    // ENFORCEMENT: Override rideshare if economy preference is low
-    const economyVsComfort = request.economyVsComfort ?? 50;
-    if (economyVsComfort <= 30 && recommendation.mode === "rideshare") {
-      console.log(`Enforcing economy constraint: overriding rideshare with transit (economy=${economyVsComfort})`);
-      recommendation = generateBudgetFriendlyRecommendation(request, cityProfile, recommendation);
-    }
-
-    return recommendation;
-  } catch (error) {
-    console.error("Agent reasoning error:", error);
-    return generateFallbackRecommendation(request, cityProfile, userContext);
   }
+
+  // Fallback to AI-generated estimates if Google Maps API fails
+  console.warn("Google Maps API unavailable, using AI-generated fallback");
+  return generateFallbackRecommendation(request, cityProfile, userContext);
+}
+
+function buildRecommendationFromGoogleRoute(
+  request: AgentRequest,
+  mode: TravelMode,
+  route: GoogleMapsRoute,
+  aiSelection: AIRouteSelection
+): RouteRecommendation {
+  const steps = mapToRouteSteps(route.steps, request.origin, request.destination);
+  const durationMin = Math.ceil(route.duration.value / 60);
+
+  // Estimate cost based on mode
+  let estimatedCost: number | null = null;
+  if (mode === "transit" && route.fare) {
+    estimatedCost = route.fare.value;
+  } else if (mode === "driving") {
+    // Rough rideshare estimate
+    const distanceKm = route.distance.value / 1000;
+    estimatedCost = Math.round(5 + distanceKm * 1.5 + durationMin * 0.3);
+  }
+
+  // Generate full trip deep link
+  const googleMapsLink = generateGoogleMapsDeepLink(
+    request.origin,
+    request.destination,
+    mode
+  );
+
+  return {
+    mode: googleModeToNomadiMode(mode),
+    summary: aiSelection.summary,
+    estimatedDuration: durationMin,
+    estimatedCost,
+    stressScore: aiSelection.stressScore,
+    steps,
+    reasoning: aiSelection.reasoning,
+    confidence: aiSelection.confidence,
+    googleMapsLink,
+  };
+}
+
+function buildRecommendationFromHeuristic(
+  request: AgentRequest,
+  routeOptions: RouteOption[],
+  cityProfile: CityProfile
+): RouteRecommendation {
+  const economyVsComfort = request.economyVsComfort ?? 50;
+  const calmVsFast = request.calmVsFast ?? 50;
+
+  // Select best mode based on preferences
+  let selectedOption: RouteOption | undefined;
+
+  if (economyVsComfort <= 30) {
+    // Budget priority: prefer transit or walking
+    selectedOption = routeOptions.find(r => r.mode === "transit")
+      || routeOptions.find(r => r.mode === "walking");
+  } else if (economyVsComfort >= 70) {
+    // Comfort priority: prefer driving
+    selectedOption = routeOptions.find(r => r.mode === "driving")
+      || routeOptions.find(r => r.mode === "transit");
+  } else if (calmVsFast >= 70) {
+    // Speed priority: pick fastest
+    selectedOption = routeOptions.reduce((fastest, current) =>
+      current.route.duration.value < fastest.route.duration.value ? current : fastest
+    );
+  } else {
+    // Balanced: prefer transit
+    selectedOption = routeOptions.find(r => r.mode === "transit")
+      || routeOptions[0];
+  }
+
+  if (!selectedOption) {
+    selectedOption = routeOptions[0];
+  }
+
+  const { mode, route } = selectedOption;
+  const steps = mapToRouteSteps(route.steps, request.origin, request.destination);
+  const durationMin = Math.ceil(route.duration.value / 60);
+
+  let estimatedCost: number | null = null;
+  if (mode === "transit" && route.fare) {
+    estimatedCost = route.fare.value;
+  } else if (mode === "driving") {
+    const distanceKm = route.distance.value / 1000;
+    estimatedCost = Math.round(5 + distanceKm * 1.5 + durationMin * 0.3);
+  }
+
+  const googleMapsLink = generateGoogleMapsDeepLink(
+    request.origin,
+    request.destination,
+    mode
+  );
+
+  // Calculate stress score heuristically
+  const walkingSteps = route.steps.filter(s => s.travelMode === "WALKING");
+  const totalWalkingMin = walkingSteps.reduce((acc, s) => acc + s.duration.value / 60, 0);
+  const transferCount = route.steps.filter(s => s.travelMode === "TRANSIT").length - 1;
+  const stressScore = Math.min(1, 0.2 + (totalWalkingMin / 30) * 0.3 + (transferCount * 0.15));
+
+  return {
+    mode: googleModeToNomadiMode(mode),
+    summary: `${mode.charAt(0).toUpperCase() + mode.slice(1)} route to ${request.destination}`,
+    estimatedDuration: durationMin,
+    estimatedCost,
+    stressScore,
+    steps,
+    reasoning: `Based on your preferences, ${mode} is a good choice for this trip.`,
+    confidence: 0.75,
+    googleMapsLink,
+  };
 }
 
 function generateBudgetFriendlyRecommendation(

@@ -1,12 +1,13 @@
-import { 
-  Footprints, 
-  Train, 
-  Car, 
-  Clock, 
+import {
+  Footprints,
+  Train,
+  Car,
+  Clock,
   ArrowRight,
   ExternalLink,
   Check,
-  Circle
+  Circle,
+  Navigation
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { RouteStep } from "@shared/schema";
@@ -78,14 +79,42 @@ export function TripStep({ step, index, isActive, isCompleted, onComplete }: Tri
                 <span>{step.stopsCount} stops</span>
               )}
             </div>
+
+            {step.transitDetails && (
+              <div className="mt-2 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1">
+                <div className="flex items-center gap-2">
+                  {step.transitDetails.vehicleType && (
+                    <span className="font-medium capitalize">{step.transitDetails.vehicleType.toLowerCase()}</span>
+                  )}
+                  {step.transitDetails.departureTime && (
+                    <span>Departs {step.transitDetails.departureTime}</span>
+                  )}
+                </div>
+                <div className="mt-1">
+                  {step.transitDetails.departureStop} → {step.transitDetails.arrivalStop}
+                </div>
+              </div>
+            )}
           </div>
           
           {isActive && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
+              {step.navigationDeepLink && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1"
+                  onClick={() => window.open(step.navigationDeepLink, "_blank")}
+                  data-testid={`button-navigate-${index}`}
+                >
+                  <Navigation className="h-3 w-3" />
+                  Navigate
+                </Button>
+              )}
               {step.deepLink && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="gap-1"
                   onClick={() => window.open(step.deepLink, "_blank")}
                   data-testid={`button-open-app-${index}`}
@@ -94,8 +123,8 @@ export function TripStep({ step, index, isActive, isCompleted, onComplete }: Tri
                   Open App
                 </Button>
               )}
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 onClick={onComplete}
                 data-testid={`button-complete-step-${index}`}
               >
