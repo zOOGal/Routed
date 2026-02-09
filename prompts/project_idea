@@ -1,0 +1,154 @@
+You are Claude Code (a senior staff full-stack engineer + systems architect). Build a production-minded v1 of “Routed”: a universal, agentic mobility app for frequent travelers. The app combines (A) delegation-of-responsibility mobility agent + (B) one-app membership/package layer that abstracts local transport apps and benefits.
+
+Core product thesis (do not dilute):
+- This is NOT a maps app and NOT a chatbot.
+- It is a calm, Wabi-Sabi inspired mobility delegate that takes responsibility for “how movement should feel” (stress/cognitive load/simplicity) and executes across modes.
+- It is also “one app for all”: users can buy a time-boxed travel package (e.g., Berlin 7-day) that bundles/activates benefits across multiple local providers (ridehail, transit passes, bikes/scooters), with Routed handling membership logic.
+
+Constraints:
+- Build an end-to-end runnable app with clear architecture, strong separation of concerns, and a demo dataset that proves the concept.
+- You may stub or simulate provider integrations (membership activation, benefits) where real APIs are unavailable, but the system must be designed to swap stubs for real integrations.
+- Avoid overengineering; prioritize clarity and extension points.
+
+Tech stack (use exactly this):
+- Frontend: Next.js (App Router) + TypeScript + Tailwind + shadcn/ui
+- Backend: Next.js route handlers (server actions allowed) OR a small Node/Express server inside the repo (choose one and justify in README)
+- Database: PostgreSQL (local dev via Docker) + Drizzle ORM
+- AI: Google Gemini (via env key). Design the agent layer so Gemini can be swapped for other LLMs.
+- Maps: Google Directions API for route candidates (fallback to mocked candidates if key missing).
+- Weather: simple API (or mocked), but include weather in agent reasoning.
+- Auth: lightweight email magic link or dev-only local auth (keep minimal).
+- Deployment: must run locally with `pnpm dev` and `docker compose up` (for Postgres).
+
+Deliverables required:
+1) A working repo with:
+   - apps/web (Next.js)
+   - packages/db (Drizzle schema + migrations)
+   - packages/core (agent + scoring + city intelligence + integrations interfaces)
+   - packages/providers (provider adapters; include at least 3 stub providers)
+2) A README with:
+   - product overview
+   - architecture diagram (ASCII)
+   - how the multi-agent/specialist architecture works (orchestrator + specialists)
+   - how membership packages work (activation, benefit calculation)
+   - how to run + env vars
+   - what is stubbed and how to replace with real APIs
+3) Seed data:
+   - Cities: Berlin, Tokyo, NYC
+   - City intelligence profiles (JSON) with cognitive load signals
+   - Provider catalog (ridehail, transit, bike/scooter) per city
+   - Package templates (e.g., Berlin 7-day)
+4) UX:
+   - Must follow Wabi-Sabi principles: Kanso (simplicity), Fukinsei (organic asymmetry), Shibui (subtle beauty), Shizen (naturalness), Yūgen (subtle depth / progressive disclosure), Datsuzoku (gentle break from conventions), Seijaku (tranquility).
+   - Must NOT look like a generic template/dashboard. Use progressive disclosure and subtle “agent presence”.
+   - Include a tiny 💬 “Anything I should know?” note button (Spotify DJ style) that opens an ephemeral note sheet. This is NOT chat.
+5) Core flows (must be implemented):
+   - Onboarding: set default style (Calm↔Quick, Save↔Spend), walking/transfer tolerance (minimal).
+   - Trip intent: user enters destination; controls are hidden until a destination is set (progressive disclosure).
+   - Optional note: user can add a one-time note (“I’m tired, keep it simple”) that biases this trip only.
+   - Agent decision: app generates route candidates (walk/transit/drive/hybrid), applies city intelligence + budget/membership adjustments, then uses Gemini to pick ONE best plan and explain it.
+   - Package purchase: user picks a city and duration (e.g., Berlin 7-day). App “activates” memberships/benefits across providers (stubbed) and stores entitlements. Show “active package” banner.
+   - Execution mode: once user taps “Go”, create a TripSession with steps. Show step cards (no map-heavy UI). Implement a replanning trigger endpoint (mock delay/weather) that can cause the agent to suggest a switch.
+   - User memory: log overrides and preferences; update user profile weights silently over time.
+
+Architecture requirements:
+- Implement an Orchestrator Agent with Specialists (multi-agent, but controlled):
+  - RouteCollector: fetch/normalize candidates
+  - CityIntelligenceScorer: apply city profile, produce CLI/cognitive load score + flags
+  - BudgetMembershipEvaluator: adjust effective cost based on active package benefits; compute “within budget” labels
+  - DecisionOrchestrator (LLM): choose route + rationale (strict JSON)
+  - Explainer: turn rationale into calm, Wabi-Sabi microcopy for UI (strict JSON)
+- Specialists must return strict JSON validated by zod; orchestrator must handle failures with fallbacks.
+- Keep the user-facing voice consistent and humble; never verbose.
+- Provide deterministic fallback: if LLM fails, choose route by scoring function and generate a simple explanation.
+
+Data model (implement with Drizzle):
+- users: id, email, createdAt
+- user_preferences: userId, calmQuickBias (0-100), saveSpendBias (0-100), walkingToleranceMin, transferTolerance, createdAt, updatedAt
+- user_city_familiarity: userId, cityCode, familiarityScore (0-100), updatedAt
+- packages: id, cityCode, name, durationDays, priceCents, includedProviders (json), benefitRules (json)
+- user_packages: id, userId, packageId, startAt, endAt, status, entitlements (json)
+- providers: id, cityCode, type (ridehail/transit/bike), name, deepLinkTemplate, membershipTypes (json)
+- trips: id, userId, cityCode, origin (json), destination (json), createdAt
+- trip_sessions: id, tripId, status, chosenPlan (json), steps (json), lastReplanAt
+- events: id, userId, type (override, abandon, replanned), payload (json), createdAt
+
+City intelligence (implement):
+- `/packages/core/cities/{cityCode}.json` containing:
+  - stationComplexity: list of stations with complexityScore
+  - nightReliability: rules
+  - walkingFriendlinessScore
+  - crowdingPatterns (simplified)
+  - “avoid” heuristics and notes
+- CLI scoring algorithm outputs:
+  - complexityScore (0-100)
+  - transferPenalty
+  - walkingPenalty (adjusted for weather)
+  - flags (e.g., “large_station”, “night_service_risk”)
+
+Membership/package system (implement as abstraction layer):
+- Packages grant entitlements that modify effective prices and choices:
+  - Ridehail: % discount or monthly-style benefit prorated to days
+  - Transit: “pass active” => cost $0 per ride (within zone) in estimates
+  - Bike: free unlock + minutes
+- Implement provider adapters in `/packages/providers`:
+  - Each provider supports:
+    - activateMembership(user, package, dates) -> entitlement JSON
+    - estimateCost(routeCandidate, entitlements) -> adjusted cost
+    - deepLink(routeCandidate) -> URL string
+- Provide 3 stub providers:
+  - Berlin: BVG (transit), Bolt (ridehail), Lime (bike/scooter)
+  - Tokyo: Suica/JR (transit stub), GO Taxi (ridehail stub), Docomo Bike (bike stub)
+  - NYC: MTA (transit), Uber (ridehail), Citi Bike (bike)
+- Stubs must behave realistically and be swappable for real APIs later.
+
+LLM prompts (implement in code, not only docs):
+- DecisionOrchestrator system prompt: calm mobility delegate; optimize stress/cognitive load; consider budget, unfamiliarity, note; output strict JSON:
+  { chosenIndex, explanationBullets[], userNoteInfluence, confidence, fallbackNeeded, deepLinks[] }
+- Explainer system prompt: rewrite explanation in Wabi-Sabi tone; short; reassuring; no tech terms; output strict JSON:
+  { headline, subhead, bullets[] }
+
+UX requirements (implement in Tailwind + shadcn):
+- Home screen:
+  - Large intent input
+  - Tiny 💬 button inside input card (bottom-right)
+  - Controls hidden until destination selected
+  - After destination, reveal: “I don’t know this city well” toggle, Calm↔Quick slider, Save↔Spend slider
+  - Replace submit arrow with a text CTA: “Let me decide”
+  - Add a short “agent presence” line (“I’ll take care of the details.”) that varies subtly
+- Decision screen:
+  - Show ONE plan card: mode chain icons, time, adjusted cost, stress label, “within budget” label
+  - “Why this?” collapsible panel with bullets
+  - “Go” primary CTA
+- Package screen:
+  - City selector, duration picker, package cards
+  - Purchase/activate flow (stub payment; record user_package)
+  - Active package banner on home + decision screens
+- Execution screen:
+  - Step cards (no heavy map)
+  - “Replan” button (simulates delay/weather) calling endpoint to demonstrate agent replanning
+
+Implementation steps (do in this order, committing along the way):
+1) Scaffold monorepo structure and Next.js app with Tailwind + shadcn.
+2) Add Docker Compose Postgres + Drizzle schema + migrations + seed script.
+3) Implement City Intelligence profiles and scoring function.
+4) Implement Providers abstraction + 3 city stub providers + package entitlement logic.
+5) Implement RouteCollector (Directions API + mock fallback) + normalization.
+6) Implement Agent Orchestrator with specialists + zod validation + deterministic fallback.
+7) Build UI flows (home, package purchase, decision, execution) with Wabi-Sabi styling and progressive disclosure + note sheet.
+8) Add event logging + preference learning (simple weight adjustments).
+9) Add README, scripts, and final polish.
+
+Quality bar:
+- Code must be clean, typed, and testable.
+- Use zod for runtime validation.
+- Include a few unit tests for scoring + entitlement adjustment + JSON parsing of LLM outputs.
+- Do not leave TODOs for core flows.
+- Keep the app calm and opinionated; do not present multiple route options in the UI (alternatives can exist behind “See alternatives” but hidden).
+
+Start by printing:
+- a repo file tree plan
+- a high-level architecture diagram (ASCII)
+- and then begin generating files.
+
+Proceed now.

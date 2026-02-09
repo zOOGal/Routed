@@ -1,200 +1,222 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* LIGHT MODE - Wabi-Sabi: Muted, earthy, organic palette */
+/*
+ * ROUTED — "Morning Mist" Design System
+ *
+ * A calm, warm aesthetic inspired by the tranquility of early morning travel.
+ * Soft natural tones that work universally across all color vision types.
+ *
+ * Typography: Source Serif 4 (display) + DM Sans (body)
+ * Palette: Warm parchment, deep forest, terracotta earth
+ */
+
 :root {
-  --button-outline: rgba(0,0,0, .08);
-  --badge-outline: rgba(0,0,0, .04);
+  /* === PALETTE: Warm Earth & Forest === */
 
-  --opaque-button-border-intensity: -6;
+  /* Base: Warm parchment - like morning light on paper */
+  --background: 42 40% 97%;
+  --foreground: 150 20% 15%;
 
-  --elevate-1: rgba(0,0,0, .02);
-  --elevate-2: rgba(0,0,0, .05);
+  /* Cards: Soft cream with subtle warmth */
+  --card: 40 35% 98%;
+  --card-foreground: 150 20% 15%;
+  --card-border: 40 20% 88%;
 
-  /* Warm paper-like background with subtle warmth */
-  --background: 40 30% 96%;
-  --foreground: 30 15% 25%;
+  /* Primary: Deep forest green - grounding, accessible */
+  --primary: 158 35% 30%;
+  --primary-foreground: 42 40% 97%;
 
-  /* Soft, organic borders */
-  --border: 35 20% 88%;
+  /* Secondary: Warm sand/stone */
+  --secondary: 38 25% 92%;
+  --secondary-foreground: 150 15% 30%;
 
-  /* Cards with warm cream tone */
-  --card: 45 40% 98%;
-  --card-foreground: 30 15% 25%;
-  --card-border: 35 15% 90%;
+  /* Accent: Terracotta earth - warm, inviting */
+  --accent: 18 55% 50%;
+  --accent-foreground: 42 40% 97%;
 
-  --sidebar: 40 25% 94%;
-  --sidebar-foreground: 30 15% 25%;
-  --sidebar-border: 35 20% 88%;
-  --sidebar-primary: 150 25% 45%;
-  --sidebar-primary-foreground: 45 40% 98%;
-  --sidebar-accent: 150 20% 90%;
-  --sidebar-accent-foreground: 150 25% 30%;
-  --sidebar-ring: 150 25% 45%;
+  /* Muted: Soft sage undertone */
+  --muted: 45 15% 90%;
+  --muted-foreground: 150 10% 45%;
 
-  --popover: 45 40% 98%;
-  --popover-foreground: 30 15% 25%;
-  --popover-border: 35 15% 90%;
+  /* Borders: Warm, nearly invisible */
+  --border: 40 15% 85%;
 
-  /* Muted sage green primary - Shizen (naturalness) */
-  --primary: 150 25% 42%;
-  --primary-foreground: 45 40% 98%;
+  /* Destructive: Muted coral */
+  --destructive: 0 45% 50%;
+  --destructive-foreground: 42 40% 97%;
 
-  /* Warm stone secondary */
-  --secondary: 35 15% 92%;
-  --secondary-foreground: 30 15% 30%;
+  /* Inputs & focus */
+  --input: 40 20% 94%;
+  --ring: 158 35% 30%;
 
-  /* Soft muted tones */
-  --muted: 35 15% 93%;
-  --muted-foreground: 30 10% 50%;
+  /* Popover */
+  --popover: 40 35% 98%;
+  --popover-foreground: 150 20% 15%;
+  --popover-border: 40 20% 88%;
 
-  /* Earthy accent - moss green */
-  --accent: 140 20% 50%;
-  --accent-foreground: 45 40% 98%;
+  /* Sidebar */
+  --sidebar: 42 30% 96%;
+  --sidebar-foreground: 150 20% 15%;
+  --sidebar-border: 40 15% 85%;
+  --sidebar-primary: 158 35% 30%;
+  --sidebar-primary-foreground: 42 40% 97%;
+  --sidebar-accent: 38 25% 92%;
+  --sidebar-accent-foreground: 150 15% 30%;
+  --sidebar-ring: 158 35% 30%;
 
-  --destructive: 10 50% 55%;
-  --destructive-foreground: 45 40% 98%;
+  /* Charts - natural, distinguishable */
+  --chart-1: 158 35% 30%;
+  --chart-2: 18 55% 50%;
+  --chart-3: 45 30% 55%;
+  --chart-4: 200 25% 45%;
+  --chart-5: 150 15% 60%;
 
-  --input: 35 20% 90%;
-  --ring: 150 25% 45%;
-  
-  --chart-1: 150 25% 45%;
-  --chart-2: 140 20% 50%;
-  --chart-3: 30 30% 55%;
-  --chart-4: 45 40% 60%;
-  --chart-5: 10 30% 55%;
+  /* Elevation overlays */
+  --elevate-1: rgba(75, 100, 85, 0.03);
+  --elevate-2: rgba(75, 100, 85, 0.06);
+  --button-outline: rgba(75, 100, 85, 0.08);
+  --badge-outline: rgba(75, 100, 85, 0.05);
+  --opaque-button-border-intensity: -4;
 
-  /* Humanist typography - warm and organic */
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-serif: Georgia, 'Times New Roman', serif;
-  --font-mono: 'JetBrains Mono', monospace;
-  --radius: .625rem;
-  --shadow-2xs: 0px 1px 2px 0px rgba(0,0,0,0.05);
-  --shadow-xs: 0px 1px 3px 0px rgba(0,0,0,0.06);
-  --shadow-sm: 0px 2px 4px 0px rgba(0,0,0,0.06);
-  --shadow: 0px 4px 6px -1px rgba(0,0,0,0.08);
-  --shadow-md: 0px 6px 10px -2px rgba(0,0,0,0.08);
-  --shadow-lg: 0px 10px 15px -3px rgba(0,0,0,0.1);
-  --shadow-xl: 0px 20px 25px -5px rgba(0,0,0,0.1);
-  --shadow-2xl: 0px 25px 50px -12px rgba(0,0,0,0.25);
-  --tracking-normal: 0em;
+  /* Typography */
+  --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Source Serif 4', Georgia, serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Spacing & Sizing */
+  --radius: 1rem;
+  --radius-lg: 1.5rem;
   --spacing: 0.25rem;
+  --tracking-normal: -0.01em;
 
-  --sidebar-primary-border: hsl(var(--sidebar-primary));
-  --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  /* Shadows - warm, organic */
+  --shadow-2xs: 0 1px 2px rgba(75, 70, 60, 0.04);
+  --shadow-xs: 0 2px 4px rgba(75, 70, 60, 0.05);
+  --shadow-sm: 0 4px 8px rgba(75, 70, 60, 0.05);
+  --shadow: 0 8px 24px rgba(75, 70, 60, 0.08);
+  --shadow-md: 0 12px 32px rgba(75, 70, 60, 0.08);
+  --shadow-lg: 0 20px 48px rgba(75, 70, 60, 0.1);
+  --shadow-xl: 0 32px 64px rgba(75, 70, 60, 0.12);
+  --shadow-2xl: 0 48px 96px rgba(75, 70, 60, 0.15);
 
-  --sidebar-accent-border: hsl(var(--sidebar-accent));
-  --sidebar-accent-border: hsl(from hsl(var(--sidebar-accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
-
+  /* Border calculations */
   --primary-border: hsl(var(--primary));
-  --primary-border: hsl(from hsl(var(--primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
-
   --secondary-border: hsl(var(--secondary));
-  --secondary-border: hsl(from hsl(var(--secondary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
-
   --muted-border: hsl(var(--muted));
-  --muted-border: hsl(from hsl(var(--muted)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
-
   --accent-border: hsl(var(--accent));
-  --accent-border: hsl(from hsl(var(--accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
-
   --destructive-border: hsl(var(--destructive));
-  --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --sidebar-primary-border: hsl(var(--sidebar-primary));
+  --sidebar-accent-border: hsl(var(--sidebar-accent));
 }
 
-/* DARK MODE - Wabi-Sabi: Deep, warm, organic night palette */
+/* === DARK MODE: Evening Forest === */
 .dark {
-  --button-outline: rgba(255,255,255, .08);
-  --badge-outline: rgba(255,255,255, .04);
+  --background: 160 20% 8%;
+  --foreground: 42 20% 92%;
 
-  --opaque-button-border-intensity: 7;
+  --card: 158 18% 11%;
+  --card-foreground: 42 20% 92%;
+  --card-border: 158 15% 18%;
 
-  --elevate-1: rgba(255,255,255, .03);
-  --elevate-2: rgba(255,255,255, .07);
+  --primary: 158 40% 55%;
+  --primary-foreground: 160 20% 8%;
 
-  /* Warm charcoal with subtle brown undertone */
-  --background: 30 15% 10%;
-  --foreground: 40 20% 90%;
+  --secondary: 158 12% 18%;
+  --secondary-foreground: 42 15% 80%;
 
-  --border: 30 12% 18%;
+  --accent: 18 50% 55%;
+  --accent-foreground: 160 20% 8%;
 
-  /* Deep warm card */
-  --card: 30 12% 13%;
-  --card-foreground: 40 20% 90%;
-  --card-border: 30 10% 20%;
+  --muted: 158 10% 16%;
+  --muted-foreground: 42 10% 55%;
 
-  --sidebar: 30 15% 11%;
-  --sidebar-foreground: 40 20% 90%;
-  --sidebar-border: 30 12% 18%;
-  --sidebar-primary: 150 25% 55%;
-  --sidebar-primary-foreground: 30 15% 10%;
-  --sidebar-accent: 150 15% 20%;
-  --sidebar-accent-foreground: 150 20% 75%;
-  --sidebar-ring: 150 25% 55%;
+  --border: 158 12% 20%;
 
-  --popover: 30 12% 13%;
-  --popover-foreground: 40 20% 90%;
-  --popover-border: 30 10% 20%;
+  --destructive: 0 50% 55%;
+  --destructive-foreground: 42 20% 95%;
 
-  /* Muted sage in dark mode */
-  --primary: 150 25% 55%;
-  --primary-foreground: 30 15% 10%;
+  --input: 158 12% 18%;
+  --ring: 158 40% 55%;
 
-  --secondary: 30 12% 18%;
-  --secondary-foreground: 40 20% 85%;
+  --popover: 158 18% 11%;
+  --popover-foreground: 42 20% 92%;
+  --popover-border: 158 15% 18%;
 
-  --muted: 30 10% 18%;
-  --muted-foreground: 30 10% 55%;
+  --sidebar: 160 18% 9%;
+  --sidebar-foreground: 42 20% 92%;
+  --sidebar-border: 158 12% 20%;
+  --sidebar-primary: 158 40% 55%;
+  --sidebar-primary-foreground: 160 20% 8%;
+  --sidebar-accent: 158 12% 18%;
+  --sidebar-accent-foreground: 42 15% 80%;
+  --sidebar-ring: 158 40% 55%;
 
-  --accent: 140 20% 45%;
-  --accent-foreground: 40 20% 95%;
+  --chart-1: 158 40% 55%;
+  --chart-2: 18 50% 55%;
+  --chart-3: 45 35% 60%;
+  --chart-4: 200 30% 55%;
+  --chart-5: 42 20% 70%;
 
-  --destructive: 10 45% 45%;
-  --destructive-foreground: 40 20% 95%;
+  --elevate-1: rgba(120, 160, 140, 0.04);
+  --elevate-2: rgba(120, 160, 140, 0.08);
+  --button-outline: rgba(120, 160, 140, 0.1);
+  --badge-outline: rgba(120, 160, 140, 0.06);
+  --opaque-button-border-intensity: 5;
 
-  --input: 30 12% 20%;
-  --ring: 150 25% 55%;
-  
-  --chart-1: 150 25% 55%;
-  --chart-2: 140 20% 50%;
-  --chart-3: 30 25% 50%;
-  --chart-4: 45 35% 55%;
-  --chart-5: 10 30% 50%;
-
-  --shadow-2xs: 0px 1px 2px 0px rgba(0,0,0,0.3);
-  --shadow-xs: 0px 1px 3px 0px rgba(0,0,0,0.4);
-  --shadow-sm: 0px 2px 4px 0px rgba(0,0,0,0.4);
-  --shadow: 0px 4px 6px -1px rgba(0,0,0,0.5);
-  --shadow-md: 0px 6px 10px -2px rgba(0,0,0,0.5);
-  --shadow-lg: 0px 10px 15px -3px rgba(0,0,0,0.6);
-  --shadow-xl: 0px 20px 25px -5px rgba(0,0,0,0.6);
-  --shadow-2xl: 0px 25px 50px -12px rgba(0,0,0,0.7);
+  --shadow-2xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-xs: 0 2px 4px rgba(0, 0, 0, 0.35);
+  --shadow-sm: 0 4px 8px rgba(0, 0, 0, 0.35);
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.45);
+  --shadow-xl: 0 32px 64px rgba(0, 0, 0, 0.5);
+  --shadow-2xl: 0 48px 96px rgba(0, 0, 0, 0.55);
 }
 
+/* === BASE STYLES === */
 @layer base {
   * {
     @apply border-border;
   }
 
-  body {
-    @apply font-sans antialiased bg-background text-foreground;
-    /* Subtle paper texture - Shizen (naturalness) */
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-    background-blend-mode: overlay;
-    background-size: 150px;
+  html {
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
-  .dark body {
-    background-blend-mode: soft-light;
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    letter-spacing: var(--tracking-normal);
+  }
+
+  /* Distinctive display headings with serif */
+  h1, h2, .heading-display {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    letter-spacing: -0.02em;
   }
 }
 
-/* Wabi-Sabi animation tokens - Yūgen (subtle depth) */
-@keyframes gentle-fade-in {
+/* === GRAIN TEXTURE OVERLAY === */
+.grain-overlay::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  z-index: 9999;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+/* === ANIMATIONS === */
+@keyframes float-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
@@ -204,21 +226,232 @@
 
 @keyframes breathe {
   0%, 100% {
-    opacity: 0.6;
+    opacity: 0.4;
+    transform: scale(1);
   }
   50% {
-    opacity: 1;
+    opacity: 0.7;
+    transform: scale(1.02);
   }
 }
 
-.animate-gentle-fade {
-  animation: gentle-fade-in 0.6s ease-out forwards;
+@keyframes gentle-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Animation classes */
+.animate-float-in {
+  animation: float-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .animate-breathe {
-  animation: breathe 3s ease-in-out infinite;
+  animation: breathe 6s ease-in-out infinite;
 }
 
+.animate-gentle-pulse {
+  animation: gentle-pulse 3s ease-in-out infinite;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out forwards;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-gentle-fade {
+  animation: float-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Staggered entrance */
+.stagger-1 { animation-delay: 0.05s; opacity: 0; }
+.stagger-2 { animation-delay: 0.1s; opacity: 0; }
+.stagger-3 { animation-delay: 0.15s; opacity: 0; }
+.stagger-4 { animation-delay: 0.2s; opacity: 0; }
+.stagger-5 { animation-delay: 0.25s; opacity: 0; }
+
+/* === COMPONENT PATTERNS === */
+
+/* Routed Card - organic, warm */
+.routed-card {
+  @apply rounded-2xl border bg-card;
+  box-shadow:
+    0 1px 2px rgba(75, 70, 60, 0.04),
+    0 8px 24px -8px rgba(75, 70, 60, 0.08);
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.routed-card:hover {
+  box-shadow:
+    0 1px 2px rgba(75, 70, 60, 0.04),
+    0 16px 40px -12px rgba(75, 70, 60, 0.12);
+  transform: translateY(-2px);
+}
+
+/* Input styling */
+.routed-input {
+  @apply rounded-xl border border-border/60 bg-card/80 px-4 py-3;
+  @apply transition-all duration-300;
+  @apply placeholder:text-muted-foreground/50;
+}
+
+.routed-input:focus {
+  @apply border-primary/50 ring-4 ring-primary/10 outline-none;
+}
+
+/* Pill buttons - organic shapes */
+.routed-pill {
+  @apply inline-flex items-center gap-2 px-4 py-2.5 rounded-full;
+  @apply text-sm font-medium transition-all duration-200;
+  @apply hover:scale-[1.02] active:scale-[0.98];
+}
+
+/* Accent dot indicator */
+.accent-dot {
+  @apply w-2 h-2 rounded-full bg-accent;
+  animation: gentle-pulse 3s ease-in-out infinite;
+}
+
+/* === SPECIAL ELEMENTS === */
+
+/* Shimmer loading */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 0%,
+    hsl(var(--muted) / 0.4) 50%,
+    hsl(var(--muted)) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Press feedback */
+.press-feedback {
+  @apply transition-transform duration-100;
+}
+
+.press-feedback:active {
+  transform: scale(0.97);
+}
+
+/* Focus ring */
+.focus-visible-ring:focus-visible {
+  @apply outline-none ring-2 ring-ring/40 ring-offset-2 ring-offset-background;
+}
+
+/* Interactive cursor */
+button:not(:disabled),
+[role="button"]:not(:disabled),
+a[href],
+input[type="checkbox"],
+input[type="radio"],
+select,
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Touch feedback */
+@media (hover: none) {
+  button:active,
+  [role="button"]:active,
+  a:active {
+    opacity: 0.8;
+  }
+}
+
+/* === CALM SPACING === */
+.calm-space {
+  @apply py-10;
+}
+
+.calm-space-sm {
+  @apply py-6;
+}
+
+/* === ACCESSIBILITY === */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .shimmer {
+    animation: none;
+    background: hsl(var(--muted));
+  }
+
+  .routed-card:hover {
+    transform: none;
+  }
+}
+
+/* === WABI-SABI LEGACY CLASSES === */
+.wabi-card {
+  @apply routed-card;
+}
+
+.wabi-input {
+  @apply routed-input;
+}
+
+/* === ELEVATION UTILITIES === */
 @layer utilities {
   input[type="search"]::-webkit-search-cancel-button {
     @apply hidden;
@@ -269,6 +502,7 @@
     inset: 0px;
     border-radius: inherit;
     z-index: 999;
+    transition: background-color 0.2s ease;
   }
 
   .hover-elevate:hover:not(.no-default-hover-elevate)::after,
@@ -284,8 +518,7 @@
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after,
   .border.active-elevate:not(.no-active-interaction-elevate)::after,
   .border.hover-elevate-2:not(.no-hover-interaction-elevate)::after,
-  .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
-  .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
+  .border.active-elevate-2:not(.no-active-interaction-elevate)::after {
     inset: -1px;
   }
 }

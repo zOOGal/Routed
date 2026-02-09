@@ -1,0 +1,202 @@
+You are Cursor Agent acting as a senior staff engineer + QA reviewer.
+
+Your task is to VERIFY an existing codebase that claims to implement an LLM-powered app with long-term memory and personalization.
+
+DO NOT add new features unless something is broken or missing.
+DO NOT refactor for style.
+Your job is to find bugs, gaps, inconsistencies, and false claims.
+
+OBJECTIVE
+Confirm whether the implementation truly satisfies the architecture and behavior described below. Be strict. Assume the code is wrong until proven correct.
+
+VERIFICATION CHECKLIST
+Go through these steps IN ORDER and report results clearly.
+
+────────────────────
+1) PROJECT STRUCTURE
+────────────────────
+Verify the following files exist and are non-empty:
+- app/main.py
+- app/db.py
+- app/models.py
+- app/schemas.py
+- app/memory/extractor.py
+- app/memory/gate.py
+- app/memory/retrieval.py
+- app/llm/client.py
+- app/chat/service.py
+- migrations/
+- docker-compose.yml
+- Dockerfile
+- README.md
+
+Report:
+- Missing files
+- Files that exist but are stubs / TODOs
+- Any mismatch with stated responsibilities
+
+────────────────────
+2) DATA MODEL VALIDATION
+────────────────────
+Inspect SQLAlchemy models and Alembic migrations.
+
+Confirm existence and correctness of:
+- users
+- conversations
+- messages
+- memories
+- feedback
+
+Check specifically:
+- UUID primary keys
+- enums for role, memory type, sensitivity
+- pgvector embedding column with correct dimension
+- indexes on (user_id, type)
+- vector similarity index exists
+- foreign keys correctly wired
+
+Report any missing columns or incorrect types.
+
+────────────────────
+3) MEMORY EXTRACTION
+────────────────────
+Open app/memory/extractor.py.
+
+Verify:
+- There is an explicit prompt that asks for STRICT JSON output
+- JSON schema matches:
+  {
+    type,
+    text,
+    structured_json,
+    confidence,
+    sensitivity,
+    expires_in_days
+  }
+- Code validates and safely parses JSON
+- Malformed LLM output is handled gracefully
+
+Report:
+- Prompt weaknesses
+- Missing fields
+- Unsafe parsing
+- Silent failures
+
+────────────────────
+4) WRITE GATE LOGIC
+────────────────────
+Open app/memory/gate.py.
+
+Verify logic exactly matches:
+- confidence ≥ 0.75 AND sensitivity == low → store
+- confidence ≥ 0.85 AND sensitivity == med → store
+- sensitivity == high → never auto-store
+- explicit consent detection (e.g. “remember this”)
+
+Check:
+- How duplicates are detected
+- Whether existing memories are refreshed vs duplicated
+
+Write a short verdict:
+✔ Correct
+⚠ Partially correct
+✘ Incorrect
+
+────────────────────
+5) RETRIEVAL QUALITY
+────────────────────
+Open app/memory/retrieval.py.
+
+Verify:
+- Hybrid retrieval exists (structured + vector)
+- Structured retrieval pulls preferences / constraints / goals
+- Vector retrieval is scoped by user_id
+- Sensitivity == high is excluded by default
+- Deduplication logic exists
+- Cap of 10 memories enforced
+- Recency and confidence are used in ranking
+
+If retrieval is “vector only” or “dump everything”, mark as FAIL.
+
+────────────────────
+6) CHAT ORCHESTRATION
+────────────────────
+Open app/chat/service.py.
+
+Verify the request flow:
+1. user message stored
+2. memory extraction called
+3. write gate applied
+4. approved memories stored + embedded
+5. relevant memories retrieved
+6. memory context pack constructed
+7. LLM called with memory pack
+8. assistant reply stored
+9. used_memories + stored_memories returned
+
+Confirm:
+- Ordering is correct
+- Failures don’t crash chat
+- Memory pack is capped and formatted
+
+────────────────────
+7) PROMPT CORRECTNESS
+────────────────────
+Inspect chat generation prompt.
+
+Confirm:
+- Memory policy exists
+- Memory is optional, not mandatory
+- Conflicts trigger clarification
+- Internal IDs are not exposed
+- Memory is referenced naturally
+
+Flag:
+- Prompt injection risk
+- Missing system/developer separation
+
+────────────────────
+8) SECURITY & PRIVACY
+────────────────────
+Check:
+- API key enforcement
+- User isolation (no cross-user memory access)
+- Memory delete endpoint actually deletes data
+- No logging of raw LLM prompts containing private data
+
+────────────────────
+9) DOCKER & RUNNABILITY
+────────────────────
+Verify:
+- docker-compose spins up postgres + api
+- pgvector is enabled
+- migrations can run cleanly
+- README commands are correct and complete
+
+────────────────────
+10) TEST COVERAGE
+────────────────────
+Run or inspect tests.
+
+Confirm:
+- write gate has unit tests
+- retrieval logic has unit tests
+- tests assert behavior, not just happy paths
+
+────────────────────
+OUTPUT FORMAT
+────────────────────
+Return a structured report:
+
+- Overall verdict: PASS / PARTIAL / FAIL
+- Critical blockers (must-fix)
+- Non-critical issues
+- Things that are surprisingly well done
+- Exact files + line numbers where issues occur
+- Concrete suggestions ONLY when necessary to fix correctness
+
+Do NOT be polite.
+Do NOT assume intent.
+Be precise, skeptical, and thorough.
+
+Begin review now.

@@ -3,7 +3,7 @@ import { pgTable, text, varchar, integer, real, boolean, jsonb, timestamp } from
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// User table with mobility preferences
+// User table with mobility preferences (legacy - for authenticated users)
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
@@ -14,6 +14,40 @@ export const users = pgTable("users", {
   stressVsSpeedBias: real("stress_vs_speed_bias").default(0.7), // 0-1, higher = prefer less stress
   costSensitivity: integer("cost_sensitivity").default(3), // 1-5 scale
 });
+
+// ============================================
+// ANONYMOUS USER PROFILES (cookie-based identity)
+// ============================================
+
+export const userProfiles = pgTable("user_profiles", {
+  // Primary key is the cookie-based user ID
+  userId: varchar("user_id", { length: 36 }).primaryKey(),
+
+  // Learned preferences (structured JSON)
+  prefsJson: jsonb("prefs_json").$type<{
+    walkingToleranceMin: number;
+    walkingToleranceMax: number;
+    transferTolerance: number;
+    calmQuickBias: number;
+    costComfortBias: number;
+    outdoorBias: number;
+    replanSensitivity: number;
+  }>().notNull(),
+
+  // City familiarity scores
+  cityFamiliarityJson: jsonb("city_familiarity_json").$type<Record<string, number>>().notNull(),
+
+  // Stats
+  totalTrips: integer("total_trips").default(0).notNull(),
+  lastTripAt: timestamp("last_trip_at"),
+
+  // Timestamps
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export type UserProfile = typeof userProfiles.$inferSelect;
+export type InsertUserProfile = typeof userProfiles.$inferInsert;
 
 // City familiarity scores for each user
 export const userCityFamiliarity = pgTable("user_city_familiarity", {
@@ -36,6 +70,17 @@ export const behavioralSignals = pgTable("behavioral_signals", {
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
+// Trip intent types
+export type TripIntent = "work" | "leisure" | "appointment" | "time_sensitive" | "exploring";
+
+export const TRIP_INTENTS: { id: TripIntent; label: string; icon: string }[] = [
+  { id: "work", label: "Work", icon: "briefcase" },
+  { id: "leisure", label: "Leisure", icon: "coffee" },
+  { id: "appointment", label: "Appointment", icon: "calendar" },
+  { id: "time_sensitive", label: "Time-sensitive", icon: "clock" },
+  { id: "exploring", label: "Exploring", icon: "compass" },
+];
+
 // Trip sessions
 export const trips = pgTable("trips", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -47,6 +92,8 @@ export const trips = pgTable("trips", {
   destinationName: text("destination_name").notNull(),
   destinationLat: real("destination_lat"),
   destinationLng: real("destination_lng"),
+  intent: text("intent").default("leisure"), // TripIntent
+  userNote: text("user_note"), // Optional user-provided context
   status: text("status").default("planned"), // 'planned', 'in_progress', 'completed', 'cancelled'
   recommendation: jsonb("recommendation"), // The AI recommendation
   reasoning: text("reasoning"), // AI explanation
@@ -54,9 +101,67 @@ export const trips = pgTable("trips", {
   currentStepIndex: integer("current_step_index").default(0),
   estimatedDuration: integer("estimated_duration"), // in minutes
   stressScore: real("stress_score"), // 0-1 scale
+  depthLayer: jsonb("depth_layer"), // DepthLayerOutput - the depth layer additions
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
   startedAt: timestamp("started_at"),
   completedAt: timestamp("completed_at"),
+});
+
+// ============================================
+// USER EVENTS & MEMORY
+// ============================================
+
+// User event types for behavioral tracking
+export type UserEventType =
+  | "opened_maps"
+  | "override_route"
+  | "replan_shown"
+  | "replan_accepted"
+  | "replan_declined"
+  | "abandoned_trip"
+  | "step_completed"
+  | "trip_completed"
+  | "walked_more_than_suggested"
+  | "walked_less_than_suggested"
+  | "chose_faster_option"
+  | "chose_calmer_option";
+
+// Detailed user events for learning
+export const userEvents = pgTable("user_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tripId: varchar("trip_id").references(() => trips.id, { onDelete: "cascade" }),
+  eventType: text("event_type").notNull(), // UserEventType
+  cityId: varchar("city_id"),
+  context: jsonb("context"), // Additional context (weather, time, step index, etc.)
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+// Memory snapshots for debugging and preference history
+export const userMemorySnapshots = pgTable("user_memory_snapshots", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  snapshotJson: jsonb("snapshot_json").notNull(), // LearnedPreferences
+  triggerEvent: text("trigger_event"), // What caused this snapshot
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+// ============================================
+// VENUE INTELLIGENCE
+// ============================================
+
+// Venue cache for opening hours, reservations, etc.
+export const venues = pgTable("venues", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  placeId: text("place_id").unique(), // Google Places ID
+  cityId: varchar("city_id").notNull(),
+  name: text("name").notNull(),
+  venueType: text("venue_type"), // museum, restaurant, station, etc.
+  hoursJson: jsonb("hours_json"), // Weekly hours structure
+  requiresReservation: boolean("requires_reservation").default(false),
+  requiresTicket: boolean("requires_ticket").default(false),
+  typicalWaitMinutes: integer("typical_wait_minutes"),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
 // Insert schemas
@@ -85,6 +190,21 @@ export const insertUserCityFamiliaritySchema = createInsertSchema(userCityFamili
   id: true,
 });
 
+export const insertUserEventSchema = createInsertSchema(userEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUserMemorySnapshotSchema = createInsertSchema(userMemorySnapshots).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertVenueSchema = createInsertSchema(venues).omit({
+  id: true,
+  updatedAt: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -94,6 +214,12 @@ export type BehavioralSignal = typeof behavioralSignals.$inferSelect;
 export type InsertBehavioralSignal = z.infer<typeof insertBehavioralSignalSchema>;
 export type UserCityFamiliarity = typeof userCityFamiliarity.$inferSelect;
 export type InsertUserCityFamiliarity = z.infer<typeof insertUserCityFamiliaritySchema>;
+export type UserEvent = typeof userEvents.$inferSelect;
+export type InsertUserEvent = z.infer<typeof insertUserEventSchema>;
+export type UserMemorySnapshot = typeof userMemorySnapshots.$inferSelect;
+export type InsertUserMemorySnapshot = z.infer<typeof insertUserMemorySnapshotSchema>;
+export type Venue = typeof venues.$inferSelect;
+export type InsertVenue = z.infer<typeof insertVenueSchema>;
 
 // City Intelligence Types (stored as JSON, not in DB)
 export interface CityProfile {
@@ -121,13 +247,21 @@ export interface RouteRecommendation {
   mode: "transit" | "rideshare" | "walk" | "bike" | "mixed";
   summary: string;
   estimatedDuration: number; // minutes
-  estimatedCost: number | null;
+  estimatedCost: number | null; // Only set if verified, otherwise null
+  costDisplay?: string; // Human-readable cost (e.g., "Standard fare", "Covered by pass")
   stressScore: number; // 0-1
   steps: RouteStep[];
   reasoning: string;
   confidence: number; // 0-1
   alternatives?: { mode: string; reason: string }[];
   googleMapsLink?: string; // Full trip link for navigation
+  // Decision metadata for transparency
+  decisionMetadata?: {
+    archetype: "calm" | "fast" | "comfort";
+    wasOnlyOption: boolean;
+    tradeoffs: string[];
+    isCoveredByPass: boolean;
+  };
 }
 
 export interface RouteStep {
@@ -175,6 +309,7 @@ export interface AgentRequest {
   cityId: string;
   userId?: string;
   mood?: TravelMood;
+  intent?: TripIntent;
   // Slider-based preferences
   calmVsFast?: number; // 0 = calm, 100 = fast
   economyVsComfort?: number; // 0 = economy, 100 = comfort
@@ -185,7 +320,69 @@ export interface AgentRequest {
 
 export interface AgentResponse {
   recommendation: RouteRecommendation;
+  depthLayer: DepthLayerOutput;
   tripId: string;
+}
+
+// ============================================
+// DEPTH LAYER OUTPUT
+// ============================================
+
+export interface DepthLayerOutput {
+  agentPresenceLine: string; // One-liner showing agent awareness
+  tripFramingLine: string; // One sentence plan summary
+  contextualInsights: string[]; // 0-4 bullets with contextual info
+  memoryCallbackLine?: string; // Optional: "Since last time..."
+  responsibilityLine: string; // "I'll monitor and adjust if anything changes."
+  placesFallbackResults?: PlacesFallbackResult[]; // Places API fallback when curated POIs don't match
+}
+
+export interface PlacesFallbackResult {
+  name: string;
+  neighborhood: string | null;
+  approxAddedMinutes: number;
+  source: "maps";
+  provider_place_id: string;
+}
+
+// ============================================
+// LEARNED PREFERENCES (for memory system)
+// ============================================
+
+export interface LearnedPreferences {
+  walkingToleranceMin: number; // Minimum walking tolerance (learned from avoidance)
+  transferTolerance: number; // 1-5 scale
+  calmQuickBias: number; // 0-1, 0 = prefer calm, 1 = prefer quick
+  saveSpendBias: number; // 0-1, 0 = save money, 1 = spend for comfort
+  familiarityByCity: Record<string, number>; // cityId -> familiarity 0-1
+  replanSensitivity: number; // How aggressive to be with replanning
+  lastUpdated: string; // ISO timestamp
+}
+
+// ============================================
+// VENUE INTELLIGENCE
+// ============================================
+
+export interface VenueInfo {
+  name: string;
+  venueType?: string;
+  isOpenNow: boolean;
+  nextOpenTime?: string; // e.g., "Opens at 10:00"
+  closingTime?: string; // e.g., "Closes at 18:00"
+  requiresReservation: boolean;
+  requiresTicket: boolean;
+  typicalWaitMinutes?: number;
+  confidence: number; // 0-1
+}
+
+export interface VenueHours {
+  monday?: { open: string; close: string }[];
+  tuesday?: { open: string; close: string }[];
+  wednesday?: { open: string; close: string }[];
+  thursday?: { open: string; close: string }[];
+  friday?: { open: string; close: string }[];
+  saturday?: { open: string; close: string }[];
+  sunday?: { open: string; close: string }[];
 }
 
 // ============================================
@@ -199,6 +396,7 @@ export const packages = pgTable("packages", {
   name: text("name").notNull(),
   durationDays: integer("duration_days").notNull(),
   priceCents: integer("price_cents").notNull(),
+  currency: text("currency").notNull().default("USD"), // USD, EUR, JPY
   description: text("description"),
   includedProviders: jsonb("included_providers").$type<string[]>().notNull(),
   benefitRules: jsonb("benefit_rules").$type<BenefitRule[]>().notNull(),
@@ -292,3 +490,54 @@ export interface ProviderAdapter {
   // Generate deep link to provider app
   getDeepLink(origin: string, destination: string): string;
 }
+
+// ============================================
+// RIDE BOOKINGS (In-app ride request)
+// ============================================
+
+export const rideBookings = pgTable("ride_bookings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
+  providerId: varchar("provider_id").notNull(),
+  providerName: text("provider_name").notNull(),
+  cityCode: varchar("city_code").notNull(),
+  status: text("status").notNull().default("requesting"), // requesting, matched, arriving, in_trip, completed, cancelled, failed
+  originJson: jsonb("origin_json").notNull(), // { lat, lng, name?, address? }
+  destinationJson: jsonb("destination_json").notNull(), // { lat, lng, name?, address? }
+  priceRangeJson: jsonb("price_range_json").notNull(), // { min, max, currency, confidence }
+  driverJson: jsonb("driver_json"), // { name, rating?, vehicle?, photoUrl? }
+  pickupEtaMin: integer("pickup_eta_min"),
+  isDemo: boolean("is_demo").notNull().default(true),
+  cancellationReason: text("cancellation_reason"),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+  completedAt: timestamp("completed_at"),
+  cancelledAt: timestamp("cancelled_at"),
+});
+
+// Ride events for audit trail (optional but useful)
+export const rideEvents = pgTable("ride_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bookingId: varchar("booking_id").notNull().references(() => rideBookings.id, { onDelete: "cascade" }),
+  eventType: text("event_type").notNull(), // status_change, driver_assigned, location_update, etc.
+  payloadJson: jsonb("payload_json"),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+// Insert schemas
+export const insertRideBookingSchema = createInsertSchema(rideBookings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertRideEventSchema = createInsertSchema(rideEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types
+export type RideBookingRecord = typeof rideBookings.$inferSelect;
+export type InsertRideBooking = z.infer<typeof insertRideBookingSchema>;
+export type RideEventRecord = typeof rideEvents.$inferSelect;
+export type InsertRideEvent = z.infer<typeof insertRideEventSchema>;

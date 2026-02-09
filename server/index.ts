@@ -1,7 +1,41 @@
+import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
+import cookieParser from "cookie-parser";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { ensureUserId } from "./user-identity";
+
+// ── Startup env-var validation ──────────────────────────────────────
+const REQUIRED_ENV = [
+  "GOOGLE_MAPS_API_KEY",
+  "AI_INTEGRATIONS_GEMINI_API_KEY",
+] as const;
+
+const OPTIONAL_ENV = [
+  "OPENWEATHER_API_KEY",
+  "DATABASE_URL",
+  "MEMORY_ASSISTANT_URL",
+  "MEMORY_ASSISTANT_API_KEY",
+] as const;
+
+const missing = REQUIRED_ENV.filter((k) => !process.env[k]);
+if (missing.length > 0) {
+  console.error(
+    `\n❌  Missing required environment variables:\n${missing.map((k) => `   - ${k}`).join("\n")}\n\nCopy .env.example to .env and fill in the values.\n`,
+  );
+  if (process.env.NODE_ENV !== "production") {
+    process.exit(1);
+  }
+}
+
+const unset = OPTIONAL_ENV.filter((k) => !process.env[k]);
+if (unset.length > 0) {
+  console.warn(
+    `⚠️  Optional env vars not set (some features will be disabled): ${unset.join(", ")}`,
+  );
+}
+// ────────────────────────────────────────────────────────────────────
 
 const app = express();
 const httpServer = createServer(app);
@@ -9,6 +43,15 @@ const httpServer = createServer(app);
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;
+  }
+}
+
+// Extend Express Request type to include userId
+declare global {
+  namespace Express {
+    interface Request {
+      userId?: string;
+    }
   }
 }
 
@@ -21,6 +64,12 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: false }));
+
+// Cookie parser for user identity
+app.use(cookieParser());
+
+// Ensure user ID cookie exists for all API routes
+app.use("/api", ensureUserId);
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -86,10 +135,9 @@ app.use((req, res, next) => {
   }
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
+  // Default to 5001 if not specified (5000 is used by macOS Control Center).
   // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || "5000", 10);
+  const port = parseInt(process.env.PORT || "5001", 10);
   httpServer.listen(
     {
       port,

@@ -39,7 +39,9 @@ export function CitySelector({ selectedCity, onCityChange }: CitySelectorProps) 
           <DropdownMenuItem
             key={c.id}
             onClick={() => onCityChange(c.id)}
-            className="gap-3 py-2.5 cursor-pointer"
+            className={`gap-3 py-2.5 cursor-pointer ${
+              c.id === selectedCity ? "bg-background/80" : ""
+            }`}
             data-testid={`menu-item-city-${c.id}`}
           >
             <MapPin className="h-4 w-4 text-muted-foreground" />

@@ -1,6 +1,48 @@
-node_modules
-dist
-.DS_Store
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
 server/public
+
+# Environment / Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+**/secrets/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs / Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Vite / TS
 vite.config.ts.*
+
+# Local data / caches
+.local/
+.replit
 *.tar.gz
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# Memory-assistant Python venv
+memory-assistant/.venv/
+memory-assistant/venv/
+
+# Cursor / AI agent ephemeral dirs
+.cursor/
+.agents/
